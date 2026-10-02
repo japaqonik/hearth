@@ -79,9 +79,9 @@ function createFileManager() {
   return {
     subscribe,
 
-    async init(showHidden: boolean) {
-      const home = await homePath();
-      await loadPath(home, showHidden, false);
+    async init(showHidden: boolean, root?: string) {
+      const start = root && root.trim() ? root : await homePath();
+      await loadPath(start, showHidden, false);
     },
 
     async enterDir(path: string, showHidden: boolean) {

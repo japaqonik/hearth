@@ -57,3 +57,18 @@ export function copyEntry(from: string, destDir: string): Promise<void> {
 export function moveEntry(from: string, destDir: string): Promise<void> {
   return invoke<void>("move_entry", { from, destDir });
 }
+
+/** Detect an available terminal emulator on the system. */
+export function detectTerminal(): Promise<string> {
+  return invoke<string>("detect_terminal");
+}
+
+/** Whether autostart is currently enabled (the .desktop file exists). */
+export function autostartStatus(): Promise<boolean> {
+  return invoke<boolean>("autostart_status");
+}
+
+/** Enable or disable autostart on login. */
+export function setAutostart(enabled: boolean): Promise<void> {
+  return invoke<void>("set_autostart", { enabled });
+}

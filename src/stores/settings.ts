@@ -36,6 +36,7 @@ export interface Config {
   system: {
     autostart: boolean;
     hostname: string;
+    terminal: string;
   };
 }
 
@@ -77,6 +78,7 @@ export const DEFAULT_CONFIG: Config = {
   system: {
     autostart: false,
     hostname: "",
+    terminal: "xterm",
   },
 };
 

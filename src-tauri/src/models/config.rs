@@ -46,6 +46,12 @@ pub struct AppsConfig {
 pub struct SystemConfig {
     pub autostart: bool,
     pub hostname: String,
+    #[serde(default = "default_terminal")]
+    pub terminal: String,
+}
+
+fn default_terminal() -> String {
+    "xterm".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -120,6 +126,7 @@ impl Default for Config {
             system: SystemConfig {
                 autostart: false,
                 hostname: "".into(),
+                terminal: default_terminal(),
             },
         }
     }

@@ -2,9 +2,10 @@ mod commands;
 mod models;
 
 use commands::{
+    autostart::{autostart_status, set_autostart},
     filesystem::{
-        copy_entry, home_path, list_directory, move_entry, open_file, path_exists,
-        rename_entry, trash_entry,
+        copy_entry, detect_terminal, home_path, list_directory, move_entry, open_file,
+        path_exists, rename_entry, trash_entry,
     },
     launcher::launch_app,
     power::{close_app, shutdown_stub},
@@ -29,6 +30,9 @@ pub fn run() {
             rename_entry,
             copy_entry,
             move_entry,
+            detect_terminal,
+            autostart_status,
+            set_autostart,
         ])
         .run(tauri::generate_context!())
         .expect("error while running hearth");

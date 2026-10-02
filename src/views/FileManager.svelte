@@ -209,7 +209,7 @@
 
   onMount(async () => {
     window.addEventListener("keydown", handleKey);
-    await filemanager.init(showHidden);
+    await filemanager.init(showHidden, $settings.media.media_root);
   });
 
   onDestroy(() => {

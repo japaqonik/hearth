@@ -291,3 +291,34 @@ pub fn home_path() -> Result<String, String> {
         .map(|p| p.to_string_lossy().to_string())
         .ok_or_else(|| "Cannot determine home directory".to_string())
 }
+
+/// Detect an available terminal emulator from a list of common ones.
+/// Returns the first command found on PATH, or "xterm" as a last resort.
+#[tauri::command]
+pub fn detect_terminal() -> String {
+    let candidates = [
+        "lxterminal",
+        "ptyxis",
+        "gnome-terminal",
+        "konsole",
+        "xfce4-terminal",
+        "mate-terminal",
+        "tilix",
+        "alacritty",
+        "kitty",
+        "xterm",
+    ];
+
+    for cand in candidates {
+        let found = Command::new("which")
+            .arg(cand)
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+        if found {
+            return cand.to_string();
+        }
+    }
+
+    "xterm".to_string()
+}

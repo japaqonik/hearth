@@ -64,20 +64,28 @@ SPEC.md                 Full implementation specification
 
 - **Phase 1** ✅ — Core shell: app grid, keyboard nav, launch apps, config
 - **Phase 2** ✅ — File manager: directory browsing, media playback
-- **Phase 3** — Settings panel, background picker *(file operations ✅ done)*
-- **Phase 4** — Polish, thumbnails, autostart, .deb packaging
+- **Phase 3** ✅ — Settings panel, file operations, background picker, autostart
+- **Phase 4** — Polish, thumbnails, .deb packaging
 
-### File manager (complete for now)
+### File manager
 
 The file manager supports:
-- Browsing from the home directory, folders listed first
+- Browsing from the configured media root (home by default), folders listed first
 - Opening media (video/audio via VLC, images and other files via the system default)
 - Copy, cut, paste (with automatic rename on collision)
 - Rename
 - Delete to the system trash (XDG trash — restore/empty via a terminal or system tools)
 - Toggle hidden files
 
-Deferred for later (see SPEC.md): in-app trash view, copy/move progress bar.
+### Settings
+
+- **Appearance** — accent color (applied live), background image via in-app picker
+- **Media** — media root path (where Files opens)
+- **Apps** — add/remove/edit launcher tiles
+- **System** — autostart on boot (XDG `.desktop`), open a terminal emulator
+
+Deferred for later (see SPEC.md): in-app trash view, copy/move progress bar,
+light theme / UI scale, kiosk-session autostart.
 
 ## Keyboard Shortcuts
 

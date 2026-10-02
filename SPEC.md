@@ -229,22 +229,56 @@ trash view.
 
 ### 4.3 Settings Panel
 
-Slide-in overlay (not a full view swap). Contains sections:
+Full view (not an overlay) with a left-hand section list and a right-hand
+content panel. Keyboard model: Up/Down in the section list, Right/Enter to
+move into content, Esc (or Left at the leftmost edge) to go back to the list,
+Up from the top section hands off to the topbar.
 
-- **Appearance** — theme (dark/light/auto), accent color picker, UI scale
-- **Media** — media root path, video player command, file extensions filter
-- **Apps** — edit app tiles (name, command, icon); includes optional Terminal launcher
-- **System** — hostname display, autostart on boot toggle
+Sections as implemented:
 
-Settings are saved to `~/.config/pi-launcher/config.toml` on every change.
+- **Appearance** — accent color picker (8 presets, applied live via CSS variable)
+  and background image (chosen through an in-app file picker; dark overlay added
+  for legibility). Theme switching and UI scale were deferred.
+- **Media** — media root path (where Files opens; supports `~`).
+- **Apps** — edit app tiles: Enter edits name, `E` edits command, `Del` removes
+  (with confirmation), bottom row adds a new tile.
+- **System** — autostart on boot toggle (implemented, see below) and an
+  "Open Terminal" action using a detected/configured terminal emulator.
+
+Settings are saved to `~/.config/hearth/config.toml` on every change.
+
+#### Autostart (implemented)
+
+The System → Autostart toggle manages an XDG autostart entry at
+`~/.config/autostart/hearth.desktop`:
+
+- Toggle ON writes the `.desktop` file with `Exec=` set to the current
+  executable path (resolved via `std::env::current_exe()`, correct in both
+  dev and installed scenarios).
+- Toggle OFF removes the file.
+- The toggle reflects the real state (file presence), read on each open.
+- Works on both GNOME (Ubuntu) and Labwc/LXDE (RPi OS) since both honor the
+  freedesktop XDG autostart standard.
+- Scope: launches Hearth when logging into the desktop session. A full kiosk
+  session (boot straight into Hearth, no desktop) is a separate, deferred
+  system-level setup.
+
+#### Terminal launch (implemented)
+
+"Open Terminal" in System launches a terminal emulator. The command is stored
+in `config.system.terminal`. If unset or the default `xterm` is missing, the
+backend `detect_terminal` command probes common terminals
+(`lxterminal`, `ptyxis`, `gnome-terminal`, `konsole`, `xfce4-terminal`,
+`mate-terminal`, `tilix`, `alacritty`, `kitty`, `xterm`) and uses the first
+found. Deliberately placed in Settings rather than as a home-screen tile so it
+is not prominently exposed.
 
 ### 4.4 Power Menu
 
-Modal overlay triggered by the power button in the Topbar. Three options:
+Modal overlay triggered by the power button in the Topbar. Two options:
 
-- Shutdown (`systemctl poweroff`)
-- Reboot (`systemctl reboot`)
-- Cancel
+- **Close Hearth** — exits the app cleanly (implemented)
+- **Shutdown** — stub for now; real power management is a separate project
 
 ---
 
