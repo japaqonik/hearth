@@ -9,6 +9,7 @@
 
   let focusedIndex = $state(0);
   let tiles = $derived($settings.apps.tiles);
+  let focusZone = $derived($navigation.focusZone);
   let errorMsg = $state("");
   let errorTimer: ReturnType<typeof setTimeout>;
 
@@ -35,6 +36,9 @@
   }
 
   function handleKey(e: KeyboardEvent) {
+    // Only handle keys when focus is in the grid
+    if (focusZone !== "grid") return;
+
     const count = tiles.length;
     if (count === 0) return;
 
@@ -53,7 +57,12 @@
         break;
       case "ArrowUp":
         e.preventDefault();
-        focusedIndex = Math.max(focusedIndex - COLS, 0);
+        // If we're in the top row, move focus to topbar
+        if (focusedIndex < COLS) {
+          navigation.enterTopbar();
+        } else {
+          focusedIndex = Math.max(focusedIndex - COLS, 0);
+        }
         break;
       case "Enter":
       case " ":
@@ -62,6 +71,13 @@
         break;
     }
   }
+
+  // When topbar leaves back to grid, restore focus
+  $effect(() => {
+    if (focusZone === "grid") {
+      // keep focusedIndex as-is
+    }
+  });
 
   onMount(() => window.addEventListener("keydown", handleKey));
   onDestroy(() => window.removeEventListener("keydown", handleKey));
@@ -72,6 +88,7 @@
     <AppGrid
       {tiles}
       {focusedIndex}
+      active={focusZone === "grid"}
       onactivate={activateTile}
     />
   </div>

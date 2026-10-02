@@ -5,10 +5,11 @@
   interface Props {
     tiles: AppTileType[];
     focusedIndex: number;
+    active: boolean;
     onactivate: (tile: AppTileType) => void;
   }
 
-  let { tiles, focusedIndex, onactivate }: Props = $props();
+  let { tiles, focusedIndex, active, onactivate }: Props = $props();
 
   const COLS = 4;
 </script>
@@ -18,7 +19,7 @@
     <AppTile
       name={tile.name}
       icon={tile.icon}
-      focused={focusedIndex === i}
+      focused={active && focusedIndex === i}
       onclick={() => onactivate(tile)}
     />
   {/each}

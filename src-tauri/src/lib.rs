@@ -1,7 +1,11 @@
 mod commands;
 mod models;
 
-use commands::{launcher::launch_app, power::power_action, settings::{load_settings, save_settings}};
+use commands::{
+    launcher::launch_app,
+    power::{close_app, shutdown_stub},
+    settings::{load_settings, save_settings},
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -9,7 +13,8 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             launch_app,
-            power_action,
+            close_app,
+            shutdown_stub,
             load_settings,
             save_settings,
         ])

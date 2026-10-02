@@ -1,21 +1,65 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { navigation } from "../stores/navigation";
+  import { navigation, TOPBAR_ITEMS } from "../stores/navigation";
 
   let time = $state("");
   let timer: ReturnType<typeof setInterval>;
+  let focusZone = $derived($navigation.focusZone);
+  let focusedTopbarIndex = $derived($navigation.focusedTopbarIndex);
 
   function updateClock() {
     const now = new Date();
     time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
+  function handleKey(e: KeyboardEvent) {
+    if (focusZone !== "topbar") return;
+
+    switch (e.key) {
+      case "ArrowLeft":
+        e.preventDefault();
+        navigation.moveTopbar("left");
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        navigation.moveTopbar("right");
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        navigation.leaveTopbar();
+        break;
+      case "Escape":
+        e.preventDefault();
+        navigation.leaveTopbar();
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        activateFocused();
+        break;
+    }
+  }
+
+  function activateFocused() {
+    const item = TOPBAR_ITEMS[focusedTopbarIndex];
+    if (item === "settings") {
+      navigation.leaveTopbar();
+      navigation.goTo("settings");
+    } else if (item === "power") {
+      navigation.openPowerMenu();
+    }
+  }
+
   onMount(() => {
     updateClock();
     timer = setInterval(updateClock, 1000);
+    window.addEventListener("keydown", handleKey);
   });
 
-  onDestroy(() => clearInterval(timer));
+  onDestroy(() => {
+    clearInterval(timer);
+    window.removeEventListener("keydown", handleKey);
+  });
 </script>
 
 <header class="topbar">
@@ -28,10 +72,10 @@
 
     <button
       class="icon-btn"
+      class:focused={focusZone === "topbar" && focusedTopbarIndex === 0}
       title="Settings"
-      onclick={() => navigation.goTo("settings")}
+      onclick={() => { navigation.goTo("settings"); }}
     >
-      <!-- gear icon -->
       <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -47,8 +91,12 @@
       </svg>
     </button>
 
-    <!-- Power button — visual stub, no action in Phase 1 -->
-    <button class="icon-btn icon-btn--dim" title="Power (not yet active)">
+    <button
+      class="icon-btn"
+      class:focused={focusZone === "topbar" && focusedTopbarIndex === 1}
+      title="Power"
+      onclick={() => navigation.openPowerMenu()}
+    >
       <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
@@ -96,23 +144,24 @@
 
   .icon-btn {
     background: none;
-    border: none;
+    border: 2px solid transparent;
     color: var(--text-muted);
     padding: 8px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color var(--transition), background var(--transition);
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
   }
 
-  .icon-btn:hover,
-  .icon-btn:focus-visible {
+  .icon-btn:hover {
     color: var(--text);
     background: var(--surface-2);
   }
 
-  .icon-btn--dim {
-    opacity: 0.3;
+  .icon-btn.focused {
+    color: var(--text);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
   }
 </style>

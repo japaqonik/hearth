@@ -12,11 +12,11 @@
     "windows": [
       {
         "title": "Hearth",
-        "width": 1280,
-        "height": 720,
-        "resizable": true,
-        "fullscreen": false,
-        "decorations": true,
+        "width": 1920,
+        "height": 1080,
+        "resizable": false,
+        "fullscreen": true,
+        "decorations": false,
         "center": true
       }
     ],

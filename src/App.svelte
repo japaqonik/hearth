@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import "./app.css";
   import Topbar from "./components/Topbar.svelte";
+  import PowerMenu from "./components/PowerMenu.svelte";
   import HomeScreen from "./views/HomeScreen.svelte";
   import FileManager from "./views/FileManager.svelte";
   import Settings from "./views/Settings.svelte";
@@ -13,6 +13,7 @@
   });
 
   let currentView = $derived($navigation.currentView);
+  let powerMenuOpen = $derived($navigation.powerMenuOpen);
 </script>
 
 <div class="layout">
@@ -27,6 +28,10 @@
       <Settings />
     {/if}
   </main>
+
+  {#if powerMenuOpen}
+    <PowerMenu />
+  {/if}
 </div>
 
 <style>
@@ -36,6 +41,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
   }
 
   .content {
