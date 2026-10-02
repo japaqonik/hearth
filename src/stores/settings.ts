@@ -62,7 +62,7 @@ export const DEFAULT_CONFIG: Config = {
       },
       image: {
         extensions: ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff"],
-        command: "eog",
+        command: "xdg-open",
         args: [],
       },
     },

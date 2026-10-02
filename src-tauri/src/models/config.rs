@@ -90,7 +90,7 @@ impl Default for Config {
                             "jpg".into(), "jpeg".into(), "png".into(), "gif".into(),
                             "webp".into(), "bmp".into(), "tiff".into(),
                         ],
-                        command: "eog".into(),
+                        command: "xdg-open".into(),
                         args: vec![],
                     },
                 },

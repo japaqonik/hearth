@@ -1,71 +1,142 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import Breadcrumb from "../components/Breadcrumb.svelte";
+  import FileList from "../components/FileList.svelte";
+  import BottomBar from "../components/BottomBar.svelte";
   import { navigation } from "../stores/navigation";
+  import { filemanager } from "../stores/filemanager";
+  import { settings } from "../stores/settings";
+  import { openFile } from "../lib/tauri";
+  import type { FileEntry } from "../lib/tauri";
 
-  function handleKey(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      navigation.goBack();
+  const PAGE = 10;
+
+  const hints = [
+    { keys: "↑↓", label: "Navigate" },
+    { keys: "Enter", label: "Open" },
+    { keys: "Backspace", label: "Up" },
+    { keys: "Esc", label: "Back" },
+  ];
+
+  let currentPath = $derived($filemanager.currentPath);
+  let entries = $derived($filemanager.entries);
+  let selectedIndex = $derived($filemanager.selectedIndex);
+  let error = $derived($filemanager.error);
+  let showHidden = $derived($settings.media.show_hidden);
+  let focusZone = $derived($navigation.focusZone);
+  let powerMenuOpen = $derived($navigation.powerMenuOpen);
+
+  // Only highlight a file when the list actually has focus
+  let listActive = $derived(focusZone === "grid" && !powerMenuOpen);
+
+  // Transient message shown in the bottom bar (e.g. unsupported file)
+  let message = $state<string | null>(null);
+  let messageTimer: ReturnType<typeof setTimeout>;
+
+  function flash(msg: string) {
+    message = msg;
+    clearTimeout(messageTimer);
+    messageTimer = setTimeout(() => (message = null), 4000);
+  }
+
+  async function activate(entry: FileEntry) {
+    if (entry.is_dir) {
+      await filemanager.enterDir(entry.path, showHidden);
+    } else {
+      try {
+        await openFile(entry.path, $settings);
+      } catch (e) {
+        flash(String(e));
+      }
     }
   }
 
-  onMount(() => window.addEventListener("keydown", handleKey));
-  onDestroy(() => window.removeEventListener("keydown", handleKey));
+  function handleKey(e: KeyboardEvent) {
+    // Ignore keys when the power menu is open or the topbar has focus
+    if (powerMenuOpen || focusZone === "topbar") return;
+
+    const count = entries.length;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        if (count > 0) filemanager.setSelected(Math.min(selectedIndex + 1, count - 1));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        // At the top of the list, hand off to the topbar
+        if (selectedIndex === 0) {
+          navigation.enterTopbar();
+        } else if (count > 0) {
+          filemanager.setSelected(Math.max(selectedIndex - 1, 0));
+        }
+        break;
+      case "PageDown":
+        e.preventDefault();
+        if (count > 0) filemanager.setSelected(Math.min(selectedIndex + PAGE, count - 1));
+        break;
+      case "PageUp":
+        e.preventDefault();
+        if (count > 0) filemanager.setSelected(Math.max(selectedIndex - PAGE, 0));
+        break;
+      case "Home":
+        e.preventDefault();
+        if (count > 0) filemanager.setSelected(0);
+        break;
+      case "End":
+        e.preventDefault();
+        if (count > 0) filemanager.setSelected(count - 1);
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (count > 0) activate(entries[selectedIndex]);
+        break;
+      case "Backspace":
+      case "ArrowLeft":
+        e.preventDefault();
+        filemanager.goUp(showHidden);
+        break;
+      case "Escape":
+        e.preventDefault();
+        navigation.goBack();
+        break;
+    }
+  }
+
+  onMount(async () => {
+    window.addEventListener("keydown", handleKey);
+    await filemanager.init(showHidden);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener("keydown", handleKey);
+    clearTimeout(messageTimer);
+  });
 </script>
 
 <div class="filemanager fade-in">
-  <div class="placeholder">
-    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="1.5"
-         stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-dim)">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-      <polyline points="16 17 21 12 16 7"/>
-      <line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-    <h2>Files</h2>
-    <p>Coming in Phase 2</p>
-    <p class="hint">Press <kbd>Esc</kbd> to go back</p>
-  </div>
+  <Breadcrumb path={currentPath} />
+
+  <FileList
+    {entries}
+    {selectedIndex}
+    active={listActive}
+    onactivate={activate}
+  />
+
+  <BottomBar
+    {hints}
+    message={message ?? error}
+  />
 </div>
 
 <style>
   .filemanager {
     flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .placeholder {
-    display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    color: var(--text-muted);
-  }
-
-  h2 {
-    color: var(--text);
-  }
-
-  p {
-    color: var(--text-muted);
-    font-size: 1rem;
-  }
-
-  .hint {
-    margin-top: 8px;
-    color: var(--text-dim);
-    font-size: 0.9rem;
-  }
-
-  kbd {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-family: inherit;
-    font-size: 0.85em;
-    color: var(--text-muted);
+    overflow: hidden;
+    min-height: 0;
   }
 </style>

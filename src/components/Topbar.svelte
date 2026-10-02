@@ -6,6 +6,7 @@
   let timer: ReturnType<typeof setInterval>;
   let focusZone = $derived($navigation.focusZone);
   let focusedTopbarIndex = $derived($navigation.focusedTopbarIndex);
+  let powerMenuOpen = $derived($navigation.powerMenuOpen);
 
   function updateClock() {
     const now = new Date();
@@ -13,7 +14,7 @@
   }
 
   function handleKey(e: KeyboardEvent) {
-    if (focusZone !== "topbar") return;
+    if (focusZone !== "topbar" || powerMenuOpen) return;
 
     switch (e.key) {
       case "ArrowLeft":

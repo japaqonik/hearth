@@ -10,6 +10,7 @@
   let focusedIndex = $state(0);
   let tiles = $derived($settings.apps.tiles);
   let focusZone = $derived($navigation.focusZone);
+  let powerMenuOpen = $derived($navigation.powerMenuOpen);
   let errorMsg = $state("");
   let errorTimer: ReturnType<typeof setTimeout>;
 
@@ -36,8 +37,8 @@
   }
 
   function handleKey(e: KeyboardEvent) {
-    // Only handle keys when focus is in the grid
-    if (focusZone !== "grid") return;
+    // Only handle keys when focus is in the grid and no overlay is open
+    if (focusZone !== "grid" || powerMenuOpen) return;
 
     const count = tiles.length;
     if (count === 0) return;
