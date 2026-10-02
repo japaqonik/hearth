@@ -37,3 +37,23 @@ export function homePath(): Promise<string> {
 export function pathExists(path: string): Promise<boolean> {
   return invoke<boolean>("path_exists", { path });
 }
+
+/** Move a file or directory to the system trash. */
+export function trashEntry(path: string): Promise<void> {
+  return invoke<void>("trash_entry", { path });
+}
+
+/** Rename a file or directory (new_name is a bare name, not a path). */
+export function renameEntry(path: string, newName: string): Promise<void> {
+  return invoke<void>("rename_entry", { path, newName });
+}
+
+/** Copy a file or directory into a destination directory. */
+export function copyEntry(from: string, destDir: string): Promise<void> {
+  return invoke<void>("copy_entry", { from, destDir });
+}
+
+/** Move a file or directory into a destination directory (cut + paste). */
+export function moveEntry(from: string, destDir: string): Promise<void> {
+  return invoke<void>("move_entry", { from, destDir });
+}

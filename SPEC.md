@@ -180,13 +180,60 @@ Design notes:
 - Active/available keys are highlighted; unavailable ones (e.g. Paste when clipboard is empty) are dimmed
 - This is a Phase 3+ feature — in Phase 2 render the normal mode bar as a static hint display only, with no options mode yet
 
+#### Delete behavior — move to XDG trash
+
+Delete never permanently removes a file. Instead it moves the file to the
+freedesktop XDG trash at `~/.local/share/Trash/`, writing the required
+`.trashinfo` metadata (original path + deletion date) so the file is proper,
+restorable trash recognized by all standard Linux tools.
+
+- Phase 3 (now): delete = move to trash only. No in-app trash view.
+- The user reclaims space externally — e.g. via `trash-cli` from a terminal
+  (`trash-empty`, `trash-list`, `trash-restore`) or a system file manager.
+
+#### Deferred: in-app Trash view (future enhancement)
+
+Not built yet. Recorded for later. A dedicated Trash view inside the file
+manager would:
+- Read `~/.local/share/Trash/files` and the matching `.trashinfo` metadata
+- Show each item's original location and deletion date
+- Offer **Restore** (move back to original path), **Delete permanently**, and **Empty Trash**
+- Rule: delete inside the trash view = permanent removal (with confirmation);
+  delete in a normal folder = move to trash
+
+This may never be needed if terminal access + `trash-cli` covers the workflow.
+
+#### Deferred: copy/move progress bar (future enhancement)
+
+Not built yet. Recorded for later. Currently `copy_entry` and `move_entry`
+run synchronously on a blocking thread, so copying or moving a large file
+freezes the UI until the operation completes. For large media files this is
+a noticeable hang.
+
+Future improvement:
+- Rewrite copy/move in Rust to copy in chunks rather than one blocking call
+- Emit progress events (bytes copied / total) via Tauri's event system
+  (`app.emit(...)` on the Rust side, `listen(...)` on the frontend)
+- Add a progress bar component (modal or inline in the bottom bar) that shows
+  percentage and allows cancellation
+- Applies to copy (`V` on a copied item) and cut+paste across filesystems
+  (same-filesystem moves are instant via `rename` and need no progress)
+
+#### Related: Terminal launch (see Settings / Apps)
+
+A configurable terminal app (e.g. `lxterminal` on RPi OS, `gnome-terminal` on
+Ubuntu) can be added as an app tile or settings action. Combined with
+`trash-cli`, this lets an aware user fully manage the trash and the system
+without leaving the launcher, potentially removing the need for an in-app
+trash view.
+
 ### 4.3 Settings Panel
 
 Slide-in overlay (not a full view swap). Contains sections:
 
 - **Appearance** — theme (dark/light/auto), accent color picker, UI scale
 - **Media** — media root path, video player command, file extensions filter
-- **Apps** — edit app tiles (name, command, icon)
+- **Apps** — edit app tiles (name, command, icon); includes optional Terminal launcher
 - **System** — hostname display, autostart on boot toggle
 
 Settings are saved to `~/.config/pi-launcher/config.toml` on every change.

@@ -2,7 +2,10 @@ mod commands;
 mod models;
 
 use commands::{
-    filesystem::{home_path, list_directory, open_file, path_exists},
+    filesystem::{
+        copy_entry, home_path, list_directory, move_entry, open_file, path_exists,
+        rename_entry, trash_entry,
+    },
     launcher::launch_app,
     power::{close_app, shutdown_stub},
     settings::{load_settings, save_settings},
@@ -22,6 +25,10 @@ pub fn run() {
             open_file,
             path_exists,
             home_path,
+            trash_entry,
+            rename_entry,
+            copy_entry,
+            move_entry,
         ])
         .run(tauri::generate_context!())
         .expect("error while running hearth");

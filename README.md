@@ -63,9 +63,21 @@ SPEC.md                 Full implementation specification
 ## Implementation Phases
 
 - **Phase 1** ✅ — Core shell: app grid, keyboard nav, launch apps, config
-- **Phase 2** — File manager: directory browsing, media playback
-- **Phase 3** — Settings panel, file operations, background picker
+- **Phase 2** ✅ — File manager: directory browsing, media playback
+- **Phase 3** — Settings panel, background picker *(file operations ✅ done)*
 - **Phase 4** — Polish, thumbnails, autostart, .deb packaging
+
+### File manager (complete for now)
+
+The file manager supports:
+- Browsing from the home directory, folders listed first
+- Opening media (video/audio via VLC, images and other files via the system default)
+- Copy, cut, paste (with automatic rename on collision)
+- Rename
+- Delete to the system trash (XDG trash — restore/empty via a terminal or system tools)
+- Toggle hidden files
+
+Deferred for later (see SPEC.md): in-app trash view, copy/move progress bar.
 
 ## Keyboard Shortcuts
 
@@ -75,4 +87,16 @@ SPEC.md                 Full implementation specification
 | Enter | Activate tile / open file |
 | Escape | Go back / close overlay |
 | Backspace | Go up one directory (file manager) |
-| M | Toggle options bar (file manager, Phase 3) |
+| M | Toggle options bar (file manager) |
+
+In the file manager options bar (press `M`):
+
+| Key | Action |
+|-----|--------|
+| H | Toggle hidden files |
+| C | Copy |
+| X | Cut |
+| V | Paste |
+| R | Rename |
+| Del | Delete to trash |
+| Esc | Close options bar |

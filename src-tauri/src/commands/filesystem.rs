@@ -150,6 +150,140 @@ pub fn path_exists(path: String) -> Result<bool, String> {
     Ok(Path::new(&p).exists())
 }
 
+/// Move a file or directory to the system trash (XDG trash on Linux).
+#[tauri::command]
+pub fn trash_entry(path: String) -> Result<(), String> {
+    let p = resolve_path(&path);
+    trash::delete(&p).map_err(|e| format!("Failed to move to trash: {}", e))
+}
+
+/// Rename a file or directory in place.
+/// `new_name` is just the new file name, not a full path.
+#[tauri::command]
+pub fn rename_entry(path: String, new_name: String) -> Result<(), String> {
+    let from = resolve_path(&path);
+
+    // Reject names that would change directories
+    if new_name.contains('/') || new_name.is_empty() {
+        return Err("Invalid name".to_string());
+    }
+
+    let parent = from
+        .parent()
+        .ok_or_else(|| "Cannot determine parent directory".to_string())?;
+    let to = parent.join(&new_name);
+
+    if to.exists() {
+        return Err(format!("'{}' already exists", new_name));
+    }
+
+    fs::rename(&from, &to).map_err(|e| format!("Rename failed: {}", e))
+}
+
+/// Generate a non-colliding destination path inside `dest_dir` for a file
+/// named `file_name`. If it exists, append " (copy)", then " (copy 2)", etc.
+fn unique_destination(dest_dir: &Path, file_name: &str) -> PathBuf {
+    let candidate = dest_dir.join(file_name);
+    if !candidate.exists() {
+        return candidate;
+    }
+
+    // Split stem and extension to insert the suffix sensibly
+    let path = Path::new(file_name);
+    let stem = path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| file_name.to_string());
+    let ext = path.extension().map(|e| e.to_string_lossy().to_string());
+
+    let make = |suffix: &str| -> PathBuf {
+        let name = match &ext {
+            Some(e) => format!("{}{}.{}", stem, suffix, e),
+            None => format!("{}{}", stem, suffix),
+        };
+        dest_dir.join(name)
+    };
+
+    let first = make(" (copy)");
+    if !first.exists() {
+        return first;
+    }
+
+    let mut n = 2;
+    loop {
+        let candidate = make(&format!(" (copy {})", n));
+        if !candidate.exists() {
+            return candidate;
+        }
+        n += 1;
+    }
+}
+
+/// Recursively copy a file or directory.
+fn copy_recursive(from: &Path, to: &Path) -> std::io::Result<()> {
+    if from.is_dir() {
+        fs::create_dir_all(to)?;
+        for entry in fs::read_dir(from)? {
+            let entry = entry?;
+            let child_to = to.join(entry.file_name());
+            copy_recursive(&entry.path(), &child_to)?;
+        }
+        Ok(())
+    } else {
+        if let Some(parent) = to.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        fs::copy(from, to)?;
+        Ok(())
+    }
+}
+
+/// Copy a file or directory into a destination directory.
+/// Collisions are resolved by appending " (copy)".
+#[tauri::command]
+pub fn copy_entry(from: String, dest_dir: String) -> Result<(), String> {
+    let src = resolve_path(&from);
+    let dir = resolve_path(&dest_dir);
+
+    let file_name = src
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .ok_or_else(|| "Invalid source path".to_string())?;
+
+    let dest = unique_destination(&dir, &file_name);
+
+    copy_recursive(&src, &dest).map_err(|e| format!("Copy failed: {}", e))
+}
+
+/// Move a file or directory into a destination directory (cut + paste).
+/// Collisions are resolved by appending " (copy)".
+#[tauri::command]
+pub fn move_entry(from: String, dest_dir: String) -> Result<(), String> {
+    let src = resolve_path(&from);
+    let dir = resolve_path(&dest_dir);
+
+    let file_name = src
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .ok_or_else(|| "Invalid source path".to_string())?;
+
+    let dest = unique_destination(&dir, &file_name);
+
+    // Try a fast rename first (same filesystem). Fall back to copy + delete.
+    match fs::rename(&src, &dest) {
+        Ok(()) => Ok(()),
+        Err(_) => {
+            copy_recursive(&src, &dest).map_err(|e| format!("Move failed: {}", e))?;
+            if src.is_dir() {
+                fs::remove_dir_all(&src)
+            } else {
+                fs::remove_file(&src)
+            }
+            .map_err(|e| format!("Move cleanup failed: {}", e))
+        }
+    }
+}
+
 /// Return the resolved absolute home directory path (used as the default root).
 #[tauri::command]
 pub fn home_path() -> Result<String, String> {
