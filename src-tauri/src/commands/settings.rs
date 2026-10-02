@@ -5,7 +5,7 @@ use crate::models::config::Config;
 fn config_path() -> Result<PathBuf, String> {
     let base = dirs::config_dir()
         .ok_or_else(|| "Cannot find config directory".to_string())?;
-    Ok(base.join("pi-launcher").join("config.toml"))
+    Ok(base.join("hearth").join("config.toml"))
 }
 
 #[tauri::command]

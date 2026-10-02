@@ -14,5 +14,5 @@ pub fn run() {
             save_settings,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running pi-launcher");
+        .expect("error while running hearth");
 }

@@ -20,7 +20,7 @@
 
 <header class="topbar">
   <div class="topbar-left">
-    <span class="app-title">Pi Launcher</span>
+    <span class="app-title">Hearth</span>
   </div>
 
   <div class="topbar-right">

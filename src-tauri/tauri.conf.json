@@ -1,5 +1,5 @@
 {
-  "productName": "pi-launcher",
+  "productName": "hearth",
   "version": "0.1.0",
   "identifier": "com.pilauncher.app",
   "build": {
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Pi Launcher",
+        "title": "Hearth",
         "width": 1280,
         "height": 720,
         "resizable": true,

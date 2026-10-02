@@ -1,12 +1,12 @@
 [package]
-name = "pi-launcher"
+name = "hearth"
 version = "0.1.0"
-description = "Raspberry Pi TV launcher"
-authors = ["rpac"]
+description = "Fullscreen media center launcher for Linux"
+authors = []
 edition = "2021"
 
 [lib]
-name = "pi_launcher_lib"
+name = "hearth_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
