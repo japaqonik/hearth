@@ -8,7 +8,7 @@ use commands::{
         path_exists, rename_entry, trash_entry,
     },
     launcher::launch_app,
-    power::{close_app, shutdown_stub},
+    power::{close_app, shutdown},
     settings::{load_settings, save_settings},
 };
 
@@ -19,7 +19,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             launch_app,
             close_app,
-            shutdown_stub,
+            shutdown,
             load_settings,
             save_settings,
             list_directory,

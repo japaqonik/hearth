@@ -11,14 +11,19 @@
   type OptionId = typeof options[number]["id"];
 
   let focusedIndex = $state(0);
+  let error = $state<string | null>(null);
 
   async function activate(id: OptionId) {
     if (id === "close") {
       await invoke("close_app");
     } else if (id === "shutdown") {
-      // Stub — will be implemented in the power management project
-      await invoke("shutdown_stub");
-      navigation.closePowerMenu();
+      try {
+        await invoke("shutdown");
+        // If shutdown succeeds the system goes down; this line rarely runs
+        navigation.closePowerMenu();
+      } catch (e) {
+        error = `Shutdown failed: ${e}`;
+      }
     }
   }
 
@@ -82,12 +87,13 @@
             </svg>
           {/if}
           <span>{option.label}</span>
-          {#if option.id === "shutdown"}
-            <span class="badge">soon</span>
-          {/if}
         </button>
       {/each}
     </div>
+
+    {#if error}
+      <p class="error">{error}</p>
+    {/if}
 
     <p class="hint"><kbd>Esc</kbd> to cancel</p>
   </div>
@@ -157,17 +163,11 @@
     background: var(--surface-3);
   }
 
-  .badge {
-    margin-left: auto;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 6px;
+  .error {
+    color: #ff6666;
+    font-size: 0.9rem;
+    text-align: center;
+    max-width: 320px;
   }
 
   .hint {
