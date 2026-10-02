@@ -121,11 +121,10 @@
   }
 
   .app-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.01em;
   }
 
   .topbar-right {
