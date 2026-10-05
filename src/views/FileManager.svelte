@@ -7,8 +7,9 @@
   import ConfirmDialog from "../components/ConfirmDialog.svelte";
   import { navigation } from "../stores/navigation";
   import { filemanager } from "../stores/filemanager";
-  import { settings } from "../stores/settings";
+  import { settings, effectiveKeymap } from "../stores/settings";
   import { openFile } from "../lib/tauri";
+  import { resolveAction } from "../lib/keyboard";
   import type { FileEntry } from "../lib/tauri";
 
   const PAGE = 10;
@@ -21,6 +22,7 @@
   let showHidden = $derived($settings.media.show_hidden);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
+  let keymap = $derived($effectiveKeymap);
 
   // Options mode (toggled with M) and dialog state
   let optionsMode = $state(false);
@@ -112,8 +114,9 @@
     if (dialogOpen || powerMenuOpen || focusZone === "topbar") return;
 
     const count = entries.length;
+    const action = resolveAction(e, keymap);
 
-    // Options-mode-specific keys
+    // Options-mode-specific letter shortcuts (file operations, not navigation)
     if (optionsMode) {
       switch (e.key.toLowerCase()) {
         case "h":
@@ -143,25 +146,27 @@
           if (selectedEntry) renameOpen = true;
           return;
       }
-      if (e.key === "Delete") {
+      if (action === "delete") {
         e.preventDefault();
         if (selectedEntry) confirmOpen = true;
         return;
       }
-      if (e.key === "Escape" || e.key.toLowerCase() === "m") {
+      if (action === "back" || action === "options") {
         e.preventDefault();
         optionsMode = false;
         return;
       }
-      // Allow navigation keys to still work in options mode (fall through below)
+      // fall through for navigation actions below
     }
 
-    switch (e.key) {
-      case "ArrowDown":
+    if (!action) return;
+
+    switch (action) {
+      case "down":
         e.preventDefault();
         if (count > 0) filemanager.setSelected(Math.min(selectedIndex + 1, count - 1));
         break;
-      case "ArrowUp":
+      case "up":
         e.preventDefault();
         if (selectedIndex === 0 && !optionsMode) {
           navigation.enterTopbar();
@@ -169,40 +174,39 @@
           filemanager.setSelected(Math.max(selectedIndex - 1, 0));
         }
         break;
-      case "PageDown":
+      case "pageDown":
         e.preventDefault();
         if (count > 0) filemanager.setSelected(Math.min(selectedIndex + PAGE, count - 1));
         break;
-      case "PageUp":
+      case "pageUp":
         e.preventDefault();
         if (count > 0) filemanager.setSelected(Math.max(selectedIndex - PAGE, 0));
         break;
-      case "Home":
+      case "home":
         e.preventDefault();
         if (count > 0) filemanager.setSelected(0);
         break;
-      case "End":
+      case "end":
         e.preventDefault();
         if (count > 0) filemanager.setSelected(count - 1);
         break;
-      case "Enter":
-      case " ":
+      case "confirm":
         e.preventDefault();
         if (count > 0) activate(entries[selectedIndex]);
         break;
-      case "Backspace":
-      case "ArrowLeft":
+      case "left":
+        // Left goes up a directory level
         e.preventDefault();
         filemanager.goUp(showHidden);
         break;
-      case "m":
-      case "M":
-        e.preventDefault();
-        optionsMode = true;
-        break;
-      case "Escape":
+      case "back":
+        // Back returns to the home screen
         e.preventDefault();
         navigation.goBack();
+        break;
+      case "options":
+        e.preventDefault();
+        optionsMode = true;
         break;
     }
   }

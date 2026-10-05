@@ -9,7 +9,9 @@ Built with [Tauri 2](https://tauri.app) (Rust backend) + [Svelte 5](https://svel
 - Fullscreen app launcher with keyboard navigation
 - Embedded file manager for browsing and playing media
 - Launches browser, media player, and any configured application
-- Dark TV-optimized UI with configurable accent color
+- Fully configurable keybindings (remap any navigation key, in-app or via config)
+- Dark TV-optimized UI with configurable accent color and background image
+- Bundled Manrope font and a flame logo — no network dependencies at runtime
 - Config stored in `~/.config/hearth/config.toml`
 
 ## Requirements
@@ -51,12 +53,15 @@ cargo tauri build
 
 ```
 src/                    Svelte frontend
-  components/           UI components (Topbar, AppTile, AppGrid, ...)
+  components/           UI components (Topbar, AppTile, Logo, dialogs, ...)
   views/                Full views (HomeScreen, FileManager, Settings)
-  stores/               Svelte stores (navigation, settings)
+  stores/               Svelte stores (navigation, settings, filemanager)
+  lib/                  Helpers (tauri IPC wrappers, keyboard actions, utils)
+  assets/fonts/         Bundled Manrope variable font
 src-tauri/              Rust backend
-  src/commands/         Tauri commands (launcher, filesystem, settings, power)
+  src/commands/         Tauri commands (launcher, filesystem, settings, power, autostart)
   src/models/           Shared data types (Config, FileEntry, ...)
+  icons/                App icons (flame mark)
 SPEC.md                 Full implementation specification
 ```
 
@@ -82,6 +87,7 @@ The file manager supports:
 - **Appearance** — accent color (applied live), background image via in-app picker
 - **Media** — media root path (where Files opens)
 - **Apps** — add/remove/edit launcher tiles
+- **Controls** — remap navigation keys (press-to-rebind), reset to defaults
 - **System** — autostart on boot (XDG `.desktop`), open a terminal emulator
 
 Deferred for later (see SPEC.md): in-app trash view, copy/move progress bar,
@@ -89,12 +95,15 @@ light theme / UI scale, kiosk-session autostart.
 
 ## Keyboard Shortcuts
 
+Navigation keys are configurable in Settings → Controls (or in `config.toml`).
+The defaults are:
+
 | Key | Action |
 |-----|--------|
 | Arrow keys | Navigate tiles / file list |
 | Enter | Activate tile / open file |
 | Escape | Go back / close overlay |
-| Backspace | Go up one directory (file manager) |
+| Backspace / Left | Go up one directory (file manager) |
 | M | Toggle options bar (file manager) |
 
 In the file manager options bar (press `M`):

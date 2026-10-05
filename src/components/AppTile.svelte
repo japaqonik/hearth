@@ -46,7 +46,7 @@
   {onclick}
 >
   <span class="tile-icon">
-    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24"
+    <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24"
          fill="none" stroke="currentColor" stroke-width="1.5"
          stroke-linecap="round" stroke-linejoin="round">
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -94,7 +94,7 @@
   }
 
   .tile-label {
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 600;
     letter-spacing: 0.02em;
   }

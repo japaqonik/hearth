@@ -440,22 +440,22 @@ Reactive store loaded from backend on startup. Any write immediately calls `save
 
 ## 7. Configuration Schema
 
-Stored as TOML at `~/.config/pi-launcher/config.toml`:
+Stored as TOML at `~/.config/hearth/config.toml`:
 
 ```toml
 [appearance]
-theme = "dark"               # "dark" | "light" | "auto"
-accent_color = "#e50914"     # CSS hex color
-ui_scale = 1.0               # float, 0.8–1.5
-background_path = ""         # path to image, empty = default gradient
+theme = "dark"               # "dark" | "light" | "auto" (only dark implemented)
+accent_color = "#e50914"     # CSS hex color, applied live
+ui_scale = 1.0               # float (reserved; UI scaling deferred)
+background_path = ""         # path to image, empty = default dark
 
 [media]
-media_root = "~"                              # resolved to /home/rpac at runtime
+media_root = "~"                              # resolved to home at runtime
 show_hidden = false
 
 # File type handlers — extension lists map to a player command + optional extra args.
 # The file path is always appended as the last argument when launching.
-# Add or override any entry to support additional formats.
+# Unknown extensions fall back to `xdg-open`.
 [media.handlers.video]
 extensions = ["mkv", "mp4", "avi", "mov", "m4v", "ts", "iso", "webm"]
 command = "vlc"
@@ -468,15 +468,15 @@ args = []
 
 [media.handlers.image]
 extensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff"]
-command = "eog"                               # GNOME image viewer; change to whatever is installed
+command = "xdg-open"                           # system default; portable across desktops
 args = []
 
 [apps]
 [[apps.tiles]]
 name = "Browser"
-command = "chromium-browser"
-args = ["--start-maximized"]   # Alt+F4 to close and return to launcher
-icon = "browser"               # maps to an SVG icon name
+command = "chromium"
+args = ["--start-maximized"]
+icon = "globe"                 # maps to an SVG icon name
 
 [[apps.tiles]]
 name = "Files"
@@ -491,14 +491,50 @@ icon = "settings"
 [system]
 autostart = false
 hostname = ""                # populated at runtime
+terminal = "xterm"           # terminal emulator; auto-detected if default/missing
+
+# Keybindings. Maps logical actions to physical key names (KeyboardEvent.key).
+# Letters match case-insensitively. Empty/omitted = built-in defaults.
+# Managed from Settings → Controls, or edited here directly.
+[controls.keymap]
+# up = ["ArrowUp"]
+# down = ["ArrowDown"]
+# left = ["ArrowLeft", "Backspace"]
+# right = ["ArrowRight"]
+# confirm = ["Enter", " "]
+# back = ["Escape"]
+# options = ["m"]
+# delete = ["Delete"]
+# editCommand = ["e"]
 ```
 
 ---
 
 ## 8. Keyboard Navigation Model
 
-All keyboard handling goes through a single global `keydown` listener in `keyboard.ts`.
-Focus is managed programmatically — no reliance on browser tab order.
+Each view owns a `keydown` listener, but none of them check raw key names
+directly. Instead they resolve keys to **logical actions** via a shared layer
+(`src/lib/keyboard.ts`), so the physical keys are fully configurable.
+
+### Logical action layer
+
+- `Action` — the vocabulary views reason about: `up`, `down`, `left`, `right`,
+  `confirm`, `back`, `options`, `pageUp`, `pageDown`, `home`, `end`, `delete`,
+  `editCommand`.
+- `Keymap` — maps each action to one or more physical key names (`KeyboardEvent.key`).
+- `DEFAULT_KEYMAP` — the built-in bindings.
+- `resolveAction(event, keymap)` — resolves a key press to an action. Single
+  letters match case-insensitively; `Backspace` falls back to `back` if unbound.
+- `effectiveKeymap` (derived store) — merges the user's configured overrides
+  (`config.controls.keymap`) over the defaults; every view subscribes to it.
+
+Text-entry contexts (the rename dialog) intentionally use raw keys, not the
+keymap, so typing works normally. File-operation letter shortcuts in the
+options bar (C/X/V/R/H) are mnemonic and remain fixed; only navigation is
+remappable.
+
+Bindings are editable in Settings → Controls (press-to-rebind) or directly in
+`config.toml`.
 
 ### Focus Grid Logic
 
@@ -535,11 +571,17 @@ Clamp at boundaries (do not wrap).
 ### Visual Style
 
 - **Dark theme by default** — suits TV viewing in a dim room
-- Background: deep dark (`#0d0d0d`) or user-supplied image with dark overlay
-- Cards/tiles: slightly lighter surface (`#1a1a1a`), 12px border radius
+- Background: deep dark (`#0d0d0d`) or user-supplied image with a dark overlay
+- Cards/tiles: slightly lighter surface (`#1a1a1a`), ~14px border radius
 - Focused element: accent-colored border (2–3px) + subtle glow (`box-shadow`)
-- Typography: system font stack, large sizes (tile labels ~18px, file list ~16px)
-- Icons: SVG inline or icon font (Lucide Icons recommended — tree-shakeable, MIT)
+- Typography: **Manrope** (variable woff2, bundled locally in `src/assets/fonts/`,
+  embedded in the binary — no runtime network dependency). Base size 19px,
+  scaled up from desktop defaults for TV legibility.
+- Logo: a flame mark (`Logo.svelte`) tinted with the accent color, shown in the
+  topbar beside the "Hearth" wordmark. Matching flame app icons in `src-tauri/icons/`.
+- Icons: inline SVG throughout
+- Sizing is driven by CSS variables in `app.css` (tile size, topbar height, edge
+  margin, etc.) so the whole UI scales from a few central values.
 
 ### Animations
 

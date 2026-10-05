@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppearanceConfig {
@@ -55,11 +56,29 @@ fn default_terminal() -> String {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ControlsConfig {
+    /// Maps a logical action name to one or more physical key names.
+    /// Empty = frontend uses its built-in defaults.
+    #[serde(default)]
+    pub keymap: HashMap<String, Vec<String>>,
+}
+
+impl Default for ControlsConfig {
+    fn default() -> Self {
+        ControlsConfig {
+            keymap: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub appearance: AppearanceConfig,
     pub media: MediaConfig,
     pub apps: AppsConfig,
     pub system: SystemConfig,
+    #[serde(default)]
+    pub controls: ControlsConfig,
 }
 
 impl Default for Config {
@@ -128,6 +147,7 @@ impl Default for Config {
                 hostname: "".into(),
                 terminal: default_terminal(),
             },
+            controls: ControlsConfig::default(),
         }
     }
 }

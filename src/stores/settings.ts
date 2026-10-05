@@ -1,5 +1,7 @@
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
+import type { Keymap } from "../lib/keyboard";
+import { DEFAULT_KEYMAP } from "../lib/keyboard";
 
 export interface AppTile {
   name: string;
@@ -37,6 +39,9 @@ export interface Config {
     autostart: boolean;
     hostname: string;
     terminal: string;
+  };
+  controls: {
+    keymap: Partial<Keymap>;
   };
 }
 
@@ -80,6 +85,9 @@ export const DEFAULT_CONFIG: Config = {
     hostname: "",
     terminal: "xterm",
   },
+  controls: {
+    keymap: {},
+  },
 };
 
 function createSettings() {
@@ -109,3 +117,20 @@ function createSettings() {
 }
 
 export const settings = createSettings();
+
+/**
+ * The active keymap: configured overrides merged over the built-in defaults.
+ * Any action not present in config falls back to DEFAULT_KEYMAP.
+ */
+export const effectiveKeymap = derived(settings, ($settings): Keymap => {
+  const configured = $settings.controls?.keymap ?? {};
+  const merged = { ...DEFAULT_KEYMAP };
+  for (const action of Object.keys(DEFAULT_KEYMAP) as (keyof Keymap)[]) {
+    const override = configured[action];
+    if (override && override.length > 0) {
+      merged[action] = override;
+    }
+  }
+  return merged;
+});
+

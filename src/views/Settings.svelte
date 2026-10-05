@@ -1,14 +1,16 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { navigation } from "../stores/navigation";
-  import { settings } from "../stores/settings";
+  import { settings, effectiveKeymap } from "../stores/settings";
   import { launchApp, detectTerminal, autostartStatus, setAutostart } from "../lib/tauri";
   import type { Config, AppTile } from "../stores/settings";
+  import { ACTION_LABELS, DEFAULT_KEYMAP, resolveAction, keyLabel } from "../lib/keyboard";
+  import type { Action } from "../lib/keyboard";
   import FilePicker from "../components/FilePicker.svelte";
   import RenameDialog from "../components/RenameDialog.svelte";
   import ConfirmDialog from "../components/ConfirmDialog.svelte";
 
-  const SECTIONS = ["Appearance", "Media", "Apps", "System"] as const;
+  const SECTIONS = ["Appearance", "Media", "Apps", "Controls", "System"] as const;
   type Section = typeof SECTIONS[number];
 
   const ACCENT_COLORS = [
@@ -56,9 +58,27 @@
       case "Appearance": return ACCENT_COLORS.length + 1; // colors + background row
       case "Media":      return 1;                         // media root
       case "Apps":       return cfg.apps.tiles.length + 1; // tiles + "Add tile"
+      case "Controls":   return ACTION_LABELS.length + 1;  // actions + reset row
       case "System":     return 2;                         // autostart toggle + open terminal
       default:           return 0;
     }
+  });
+
+  // Rebind capture state for the Controls section
+  let rebinding = $state(false);
+  let rebindAction = $state<Action | null>(null);
+
+  // Scroll the focused content row into view as the selection moves
+  $effect(() => {
+    if (zone !== "content") return;
+    // Reference contentIndex/section so the effect re-runs on change
+    const _ = contentIndex + section;
+    queueMicrotask(() => {
+      const el = document.querySelector(
+        `[data-content-index="${contentIndex}"]`
+      ) as HTMLElement | null;
+      el?.scrollIntoView({ block: "nearest" });
+    });
   });
 
   async function update(mut: (c: Config) => void) {
@@ -132,6 +152,54 @@
     }
   }
 
+  // ── Controls (keybinding) actions ──
+  function currentKeysFor(action: Action): string[] {
+    const configured = cfg.controls?.keymap?.[action];
+    if (configured && configured.length > 0) return configured;
+    return DEFAULT_KEYMAP[action];
+  }
+
+  function startRebind(action: Action) {
+    rebindAction = action;
+    rebinding = true;
+  }
+
+  async function captureRebind(e: KeyboardEvent) {
+    // Called while rebinding — the next key press becomes the new binding
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Escape cancels the rebind without changing anything
+    if (e.key === "Escape") {
+      rebinding = false;
+      rebindAction = null;
+      return;
+    }
+
+    const action = rebindAction;
+    if (!action) return;
+
+    // Store the single key as-is; the resolver matches letters case-insensitively
+    const key = e.key;
+
+    await update((c) => {
+      if (!c.controls) c.controls = { keymap: {} };
+      if (!c.controls.keymap) c.controls.keymap = {};
+      c.controls.keymap[action] = [key];
+    });
+
+    rebinding = false;
+    rebindAction = null;
+    flash(`Bound "${action}" to ${keyLabel(key)}`);
+  }
+
+  async function resetKeymap() {
+    await update((c) => {
+      c.controls = { keymap: {} };
+    });
+    flash("Controls reset to defaults");
+  }
+
   // ── Rename dialog dispatch ──
   function startRename(target: typeof renameTarget, initial: string, tileIndex = -1) {
     renameTarget = target;
@@ -168,6 +236,13 @@
           addTile();
         }
         break;
+      case "Controls":
+        if (contentIndex < ACTION_LABELS.length) {
+          startRebind(ACTION_LABELS[contentIndex].action);
+        } else {
+          resetKeymap();
+        }
+        break;
       case "System":
         if (contentIndex === 0) toggleAutostart();
         else openTerminal();
@@ -175,46 +250,43 @@
     }
   }
 
-  function handleAppearanceKey(e: KeyboardEvent) {
+  function handleAppearanceKey(action: string, e: KeyboardEvent) {
     if (appearanceRow === 0) {
       // Swatch row — horizontal
-      switch (e.key) {
-        case "ArrowRight":
+      switch (action) {
+        case "right":
           e.preventDefault();
           swatchIndex = Math.min(swatchIndex + 1, ACCENT_COLORS.length - 1);
           break;
-        case "ArrowLeft":
+        case "left":
           e.preventDefault();
           if (swatchIndex === 0) {
-            // Already at leftmost — go back to the section list
             zone = "sections";
           } else {
             swatchIndex = swatchIndex - 1;
           }
           break;
-        case "ArrowDown":
+        case "down":
           e.preventDefault();
           appearanceRow = 1;
           break;
-        case "Enter":
-        case " ":
+        case "confirm":
           e.preventDefault();
           setAccent(ACCENT_COLORS[swatchIndex]);
           break;
       }
     } else {
       // Background row
-      switch (e.key) {
-        case "ArrowUp":
+      switch (action) {
+        case "up":
           e.preventDefault();
           appearanceRow = 0;
           break;
-        case "ArrowLeft":
+        case "left":
           e.preventDefault();
           zone = "sections";
           break;
-        case "Enter":
-        case " ":
+        case "confirm":
           e.preventDefault();
           openBackgroundPicker();
           break;
@@ -223,27 +295,36 @@
   }
 
   function handleKey(e: KeyboardEvent) {
+    // While rebinding, capture the next key press as the new binding
+    if (rebinding) {
+      captureRebind(e);
+      return;
+    }
+
     if (dialogOpen || powerMenuOpen || focusZone === "topbar") return;
 
+    const action = resolveAction(e, $effectiveKeymap);
+
     if (zone === "sections") {
-      switch (e.key) {
-        case "ArrowDown":
+      if (!action) return;
+      switch (action) {
+        case "down":
           e.preventDefault();
           sectionIndex = Math.min(sectionIndex + 1, SECTIONS.length - 1);
           break;
-        case "ArrowUp":
+        case "up":
           e.preventDefault();
           if (sectionIndex === 0) navigation.enterTopbar();
           else sectionIndex = Math.max(sectionIndex - 1, 0);
           break;
-        case "ArrowRight":
-        case "Enter":
+        case "right":
+        case "confirm":
           e.preventDefault();
           zone = "content";
           contentIndex = 0;
           appearanceRow = 0;
           break;
-        case "Escape":
+        case "back":
           e.preventDefault();
           navigation.goBack();
           break;
@@ -252,46 +333,46 @@
     }
 
     // zone === "content"
-    // Esc is the only way back to the section list (Left is free for horizontal nav)
-    if (e.key === "Escape") {
+    if (!action) return;
+
+    // Back always returns to the section list from content
+    if (action === "back") {
       e.preventDefault();
       zone = "sections";
       return;
     }
 
     if (section === "Appearance") {
-      handleAppearanceKey(e);
+      handleAppearanceKey(action, e);
       return;
     }
 
-    // Default linear navigation for Media / Apps / System
-    switch (e.key) {
-      case "ArrowLeft":
+    // Default linear navigation for Media / Apps / Controls / System
+    switch (action) {
+      case "left":
         e.preventDefault();
         zone = "sections";
         break;
-      case "ArrowDown":
+      case "down":
         e.preventDefault();
         contentIndex = Math.min(contentIndex + 1, contentCount - 1);
         break;
-      case "ArrowUp":
+      case "up":
         e.preventDefault();
         contentIndex = Math.max(contentIndex - 1, 0);
         break;
-      case "Enter":
-      case " ":
+      case "confirm":
         e.preventDefault();
         activateContent();
         break;
-      case "e":
-      case "E":
+      case "editCommand":
         // Edit command of a tile (secondary action in Apps)
         if (section === "Apps" && contentIndex < cfg.apps.tiles.length) {
           e.preventDefault();
           startRename("tileCommand", cfg.apps.tiles[contentIndex].command, contentIndex);
         }
         break;
-      case "Delete":
+      case "delete":
         if (section === "Apps" && contentIndex < cfg.apps.tiles.length) {
           e.preventDefault();
           editingTileIndex = contentIndex;
@@ -398,6 +479,38 @@
           onclick={() => { contentIndex = cfg.apps.tiles.length; addTile(); }}
         >
           + Add app
+        </button>
+      </div>
+
+    {:else if section === "Controls"}
+      <h2>Controls</h2>
+      <p class="section-hint">Enter on an action, then press the key to bind it. Esc cancels a rebind.</p>
+      <div class="controls-list">
+        {#each ACTION_LABELS as item, i}
+          <div
+            class="row-field"
+            class:focused={zone === "content" && contentIndex === i}
+            data-content-index={i}
+          >
+            <span class="value">{item.label}</span>
+            <span class="keys">
+              {#if rebinding && rebindAction === item.action}
+                <span class="listening">Press a key…</span>
+              {:else}
+                {#each currentKeysFor(item.action) as k}
+                  <kbd>{keyLabel(k)}</kbd>
+                {/each}
+              {/if}
+            </span>
+          </div>
+        {/each}
+        <button
+          class="row-field editable reset-row"
+          class:focused={zone === "content" && contentIndex === ACTION_LABELS.length}
+          data-content-index={ACTION_LABELS.length}
+          onclick={() => { contentIndex = ACTION_LABELS.length; resetKeymap(); }}
+        >
+          Reset all to defaults
         </button>
       </div>
 
@@ -673,6 +786,42 @@
     justify-content: center;
     color: var(--text-muted);
     font-weight: 500;
+  }
+
+  .controls-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .keys {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .keys kbd {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 0.85rem;
+    color: var(--text);
+    min-width: 26px;
+    text-align: center;
+  }
+
+  .listening {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .reset-row {
+    justify-content: center;
+    color: var(--text-muted);
+    margin-top: 8px;
   }
 
   .toast {

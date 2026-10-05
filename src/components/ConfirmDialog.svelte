@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
+  import { get } from "svelte/store";
+  import { effectiveKeymap } from "../stores/settings";
+  import { resolveAction } from "../lib/keyboard";
 
   interface Props {
     title: string;
@@ -24,19 +27,19 @@
 
   function handleKey(e: KeyboardEvent) {
     e.stopPropagation();
-    switch (e.key) {
-      case "ArrowLeft":
-      case "ArrowRight":
+    const action = resolveAction(e, get(effectiveKeymap));
+    switch (action) {
+      case "left":
+      case "right":
         e.preventDefault();
         focusedIndex = focusedIndex === 0 ? 1 : 0;
         break;
-      case "Enter":
-      case " ":
+      case "confirm":
         e.preventDefault();
         if (focusedIndex === 1) onconfirm();
         else oncancel();
         break;
-      case "Escape":
+      case "back":
         e.preventDefault();
         oncancel();
         break;

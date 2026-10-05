@@ -2,7 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import AppGrid from "../components/AppGrid.svelte";
   import { navigation } from "../stores/navigation";
-  import { settings } from "../stores/settings";
+  import { settings, effectiveKeymap } from "../stores/settings";
+  import { resolveAction } from "../lib/keyboard";
   import { invoke } from "@tauri-apps/api/core";
 
   const COLS = 4;
@@ -11,6 +12,7 @@
   let tiles = $derived($settings.apps.tiles);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
+  let keymap = $derived($effectiveKeymap);
   let errorMsg = $state("");
   let errorTimer: ReturnType<typeof setTimeout>;
 
@@ -43,20 +45,23 @@
     const count = tiles.length;
     if (count === 0) return;
 
-    switch (e.key) {
-      case "ArrowRight":
+    const action = resolveAction(e, keymap);
+    if (!action) return;
+
+    switch (action) {
+      case "right":
         e.preventDefault();
         focusedIndex = Math.min(focusedIndex + 1, count - 1);
         break;
-      case "ArrowLeft":
+      case "left":
         e.preventDefault();
         focusedIndex = Math.max(focusedIndex - 1, 0);
         break;
-      case "ArrowDown":
+      case "down":
         e.preventDefault();
         focusedIndex = Math.min(focusedIndex + COLS, count - 1);
         break;
-      case "ArrowUp":
+      case "up":
         e.preventDefault();
         // If we're in the top row, move focus to topbar
         if (focusedIndex < COLS) {
@@ -65,8 +70,7 @@
           focusedIndex = Math.max(focusedIndex - COLS, 0);
         }
         break;
-      case "Enter":
-      case " ":
+      case "confirm":
         e.preventDefault();
         activateTile(tiles[focusedIndex]);
         break;

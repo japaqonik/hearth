@@ -2,6 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { navigation } from "../stores/navigation";
+  import { effectiveKeymap } from "../stores/settings";
+  import { resolveAction } from "../lib/keyboard";
 
   const options = [
     { id: "close",    label: "Close Hearth",  icon: "x-circle",     available: true },
@@ -28,23 +30,25 @@
   }
 
   function handleKey(e: KeyboardEvent) {
-    switch (e.key) {
-      case "ArrowUp":
-      case "ArrowLeft":
+    const action = resolveAction(e, $effectiveKeymap);
+    if (!action) return;
+
+    switch (action) {
+      case "up":
+      case "left":
         e.preventDefault();
         focusedIndex = Math.max(focusedIndex - 1, 0);
         break;
-      case "ArrowDown":
-      case "ArrowRight":
+      case "down":
+      case "right":
         e.preventDefault();
         focusedIndex = Math.min(focusedIndex + 1, options.length - 1);
         break;
-      case "Enter":
-      case " ":
+      case "confirm":
         e.preventDefault();
         activate(options[focusedIndex].id);
         break;
-      case "Escape":
+      case "back":
         e.preventDefault();
         navigation.closePowerMenu();
         break;
