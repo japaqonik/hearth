@@ -275,10 +275,15 @@ is not prominently exposed.
 
 ### 4.4 Power Menu
 
-Modal overlay triggered by the power button in the Topbar. Two options:
+Modal overlay triggered by the power button in the Topbar. Three options:
 
-- **Close Hearth** — exits the app cleanly (implemented)
-- **Shutdown** — stub for now; real power management is a separate project
+- **Minimize** — minimizes the window (`minimize_window` command) so the user can
+  reach the desktop/system without quitting Hearth. On Wayland the exact behavior
+  depends on the compositor (Labwc minimizes to the panel).
+- **Close Hearth** — exits the app cleanly (`close_app`).
+- **Shutdown** — powers the system off via `systemctl poweroff` (`shutdown` command).
+  Relies on logind/polkit allowing a local session to power off without a
+  password (the norm on Ubuntu and Raspberry Pi OS). Errors surface in the menu.
 
 ---
 
@@ -364,42 +369,35 @@ async fn load_settings() -> Result<Config, String>
 async fn save_settings(config: Config) -> Result<(), String>
 ```
 
-Config file path: `~/.config/pi-launcher/config.toml`  
+Config file path: `~/.config/hearth/config.toml`  
 Create with defaults if missing.
 
 ### 5.4 power.rs
 
-**Status: stub — power functionality is deferred to a separate project.**
-
-The power button in the Topbar is rendered but wired to a no-op command.
-Sleep/suspend logic will be implemented later and plugged in here.
+Implemented. Provides window and system power controls used by the Power Menu.
 
 ```rust
-// Stub — does nothing, returns Ok so the frontend does not show an error
+// Exit the application
 #[tauri::command]
-async fn power_action() -> Result<(), String> {
-    Ok(())
-}
+fn close_app(app: AppHandle)
+
+// Minimize the main window (drop to desktop without quitting)
+#[tauri::command]
+fn minimize_window(app: AppHandle) -> Result<(), String>
+
+// Power off the system
+#[tauri::command]
+fn shutdown() -> Result<(), String>
 ```
 
-When the sleep project is ready, this module will be replaced with:
-
-```rust
-// Future implementation
-#[tauri::command]
-async fn suspend() -> Result<(), String>
-
-#[tauri::command]
-async fn shutdown() -> Result<(), String>
-
-#[tauri::command]
-async fn reboot() -> Result<(), String>
-```
-
-Notes for future implementation:
-- Use `std::process::Command::new("systemctl")` with `suspend` / `poweroff` / `reboot`
-- Requires either a polkit rule or `/etc/sudoers.d/pi-launcher` entry for passwordless execution
-- Recommended: polkit rule scoped to the pi-launcher process
+Notes:
+- `shutdown` runs `systemctl poweroff`. On a local session with logind/polkit
+  this succeeds without a password on both Ubuntu and Raspberry Pi OS. If a
+  setup denies it, the error is surfaced in the Power Menu; a polkit rule or
+  sudoers entry would then be needed.
+- `minimize_window` resolves the `"main"` window via `get_webview_window` and
+  calls `minimize()`. Behavior on Wayland depends on the compositor.
+- Suspend/sleep remains a separate future project; not implemented here.
 
 ---
 
