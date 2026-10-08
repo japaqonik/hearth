@@ -1,10 +1,21 @@
 use std::process::Command;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 /// Close the application.
 #[tauri::command]
 pub fn close_app(app: AppHandle) {
     app.exit(0);
+}
+
+/// Minimize the main window — drops to the desktop without quitting Hearth.
+#[tauri::command]
+pub fn minimize_window(app: AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Main window not found".to_string())?;
+    window
+        .minimize()
+        .map_err(|e| format!("Failed to minimize: {}", e))
 }
 
 /// Power off the system.

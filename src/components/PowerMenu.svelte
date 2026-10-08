@@ -6,8 +6,9 @@
   import { resolveAction } from "../lib/keyboard";
 
   const options = [
-    { id: "close",    label: "Close Hearth",  icon: "x-circle",     available: true },
-    { id: "shutdown", label: "Shutdown",       icon: "power",        available: true },
+    { id: "minimize", label: "Minimize",      icon: "minimize",  available: true },
+    { id: "close",    label: "Close Hearth",  icon: "x-circle",  available: true },
+    { id: "shutdown", label: "Shutdown",      icon: "power",     available: true },
   ] as const;
 
   type OptionId = typeof options[number]["id"];
@@ -16,7 +17,14 @@
   let error = $state<string | null>(null);
 
   async function activate(id: OptionId) {
-    if (id === "close") {
+    if (id === "minimize") {
+      try {
+        await invoke("minimize_window");
+        navigation.closePowerMenu();
+      } catch (e) {
+        error = `Minimize failed: ${e}`;
+      }
+    } else if (id === "close") {
       await invoke("close_app");
     } else if (id === "shutdown") {
       try {
@@ -74,7 +82,13 @@
           class:focused={focusedIndex === i}
           onclick={() => activate(option.id)}
         >
-          {#if option.id === "close"}
+          {#if option.id === "minimize"}
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          {:else if option.id === "close"}
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
                  fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">

@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Hearth",
         "width": 1920,
         "height": 1080,
