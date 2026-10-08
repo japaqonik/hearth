@@ -9,6 +9,15 @@
   src: url("./assets/fonts/Manrope-variable.woff2") format("woff2");
 }
 
+/* Display face used only for the Hearth wordmark */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 300 900;      /* variable font weight range */
+  font-display: swap;
+  src: url("./assets/fonts/Fraunces-variable.woff2") format("woff2");
+}
+
 /* ── CSS Variables ─────────────────────────────────────── */
 :root {
   --bg:           #0f1419;   /* cool slate near-black */

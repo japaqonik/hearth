@@ -68,7 +68,7 @@
 
 <header class="topbar">
   <div class="topbar-left">
-    <Logo size={48} />
+    <Logo size={60} />
     <span class="app-title">Hearth</span>
   </div>
 
@@ -131,10 +131,13 @@
   }
 
   .app-title {
-    font-size: 2.2rem;
-    font-weight: 800;
+    font-family: "Fraunces", "Manrope", serif;
+    font-size: 3.2rem;
+    font-weight: 600;
     color: var(--text);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
+    /* Fraunces axes: opsz (optical size) high for display, SOFT slightly up */
+    font-variation-settings: "opsz" 144, "SOFT" 40, "WONK" 0;
   }
 
   .topbar-right {

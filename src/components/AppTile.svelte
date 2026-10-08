@@ -67,7 +67,8 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 16px;
     padding: 28px;
     color: var(--text);
     transition: background var(--transition), border-color var(--transition), transform var(--transition);
