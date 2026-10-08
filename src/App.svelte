@@ -8,6 +8,7 @@
   import Settings from "./views/Settings.svelte";
   import { navigation } from "./stores/navigation";
   import { settings } from "./stores/settings";
+  import defaultBackground from "./assets/backgrounds/default.jpg";
 
   onMount(async () => {
     await settings.load();
@@ -18,9 +19,9 @@
   let accent = $derived($settings.appearance.accent_color);
   let backgroundPath = $derived($settings.appearance.background_path);
 
-  // Convert a filesystem path to an asset URL the webview can load
+  // Background: a user-chosen image if set, otherwise the bundled default wallpaper.
   let backgroundUrl = $derived(
-    backgroundPath ? convertFileSrc(backgroundPath) : ""
+    backgroundPath ? convertFileSrc(backgroundPath) : defaultBackground
   );
 
   // Apply accent color as a CSS variable override on :root
@@ -81,7 +82,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: rgba(13, 13, 13, 0.6);
+    background: rgba(15, 20, 25, 0.6);
     pointer-events: none;
     z-index: 0;
   }

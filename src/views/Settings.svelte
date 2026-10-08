@@ -14,8 +14,8 @@
   type Section = typeof SECTIONS[number];
 
   const ACCENT_COLORS = [
-    "#e50914", "#1db954", "#0a84ff", "#ff9f0a",
-    "#bf5af2", "#ff375f", "#64d2ff", "#ffffff",
+    "#2dd4bf", "#38bdf8", "#a78bfa", "#4ade80",
+    "#f59e42", "#fb7185", "#facc15", "#eaf0f2",
   ];
 
   // Focus model: "sections" (left list) or "content" (right panel)

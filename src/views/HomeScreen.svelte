@@ -6,7 +6,7 @@
   import { resolveAction } from "../lib/keyboard";
   import { invoke } from "@tauri-apps/api/core";
 
-  const COLS = 4;
+  const COLS = 3;
 
   let focusedIndex = $state(0);
   let tiles = $derived($settings.apps.tiles);

@@ -3,10 +3,11 @@
     name: string;
     icon: string;
     focused: boolean;
+    color?: string;
     onclick: () => void;
   }
 
-  let { name, icon, focused, onclick }: Props = $props();
+  let { name, icon, focused, color = "var(--accent)", onclick }: Props = $props();
 
   // Map icon name to inline SVG path data
   const icons: Record<string, string> = {
@@ -45,8 +46,8 @@
   data-tile-name={name}
   {onclick}
 >
-  <span class="tile-icon">
-    <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24"
+  <span class="tile-icon" style="color: {color}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="84" height="84" viewBox="0 0 24 24"
          fill="none" stroke="currentColor" stroke-width="1.5"
          stroke-linecap="round" stroke-linejoin="round">
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -58,18 +59,18 @@
 
 <style>
   .tile {
-    width: var(--tile-size);
-    height: var(--tile-size);
+    width: var(--tile-w);
+    height: var(--tile-h);
     background: var(--surface);
     border: 2px solid var(--border);
     border-radius: var(--radius);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 28px;
     color: var(--text);
-    transition: background var(--transition), border-color var(--transition);
+    transition: background var(--transition), border-color var(--transition), transform var(--transition);
     flex-shrink: 0;
   }
 
@@ -81,21 +82,23 @@
   .tile.focused {
     background: var(--surface-2);
     border-color: var(--accent);
-    box-shadow: 0 0 20px var(--accent-glow);
+    box-shadow: 0 0 28px var(--accent-glow);
+    transform: scale(1.05);
   }
 
   .tile-icon {
-    color: var(--text-muted);
-    transition: color var(--transition);
+    opacity: 0.75;
+    transition: opacity var(--transition), transform var(--transition);
+    display: flex;
   }
 
   .tile.focused .tile-icon {
-    color: var(--text);
+    opacity: 1;
   }
 
   .tile-label {
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
   }
 </style>

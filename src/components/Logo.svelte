@@ -19,6 +19,12 @@
   fill="none"
   aria-hidden="true"
 >
+  <defs>
+    <linearGradient id="flame-outer" x1="24" y1="4" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff5e3a"/>
+      <stop offset="1" stop-color="#ff2d55"/>
+    </linearGradient>
+  </defs>
   <!-- Outer flame -->
   <path
     d="M24 4
@@ -27,7 +33,7 @@
        C 14 19, 18 17, 19 12
        C 22 15, 20 20, 24 20
        C 27 20, 26 11, 24 4 Z"
-    fill="var(--accent)"
+    fill="url(#flame-outer)"
   />
   <!-- Inner flame highlight -->
   <path
@@ -37,13 +43,13 @@
        C 20 30, 22 29, 23 27
        C 23.5 29, 23 31, 24 31
        C 25 31, 25 27, 24 24 Z"
-    fill="#ffb020"
+    fill="#ffcf40"
   />
 </svg>
 
 <style>
   .logo {
     display: block;
-    filter: drop-shadow(0 0 6px var(--accent-glow));
+    filter: drop-shadow(0 0 8px rgba(255, 94, 58, 0.4));
   }
 </style>

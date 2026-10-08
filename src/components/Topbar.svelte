@@ -68,7 +68,7 @@
 
 <header class="topbar">
   <div class="topbar-left">
-    <Logo size={34} />
+    <Logo size={48} />
     <span class="app-title">Hearth</span>
   </div>
 
@@ -81,7 +81,7 @@
       title="Settings"
       onclick={() => { navigation.goTo("settings"); }}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
@@ -102,7 +102,7 @@
       title="Power"
       onclick={() => navigation.openPowerMenu()}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
         <line x1="12" y1="2" x2="12" y2="12"/>
@@ -127,24 +127,24 @@
   .topbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 18px;
   }
 
   .app-title {
-    font-size: 1.35rem;
+    font-size: 2.2rem;
     font-weight: 800;
     color: var(--text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 
   .topbar-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 24px;
   }
 
   .clock {
-    font-size: 1.4rem;
+    font-size: 1.8rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     color: var(--text);

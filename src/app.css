@@ -11,23 +11,26 @@
 
 /* ── CSS Variables ─────────────────────────────────────── */
 :root {
-  --bg:           #0d0d0d;
-  --surface:      #1a1a1a;
-  --surface-2:    #242424;
-  --surface-3:    #2e2e2e;
-  --border:       #333333;
-  --accent:       #e50914;
-  --accent-glow:  rgba(229, 9, 20, 0.35);
-  --text:         #f0f0f0;
-  --text-muted:   #888888;
-  --text-dim:     #555555;
-  --radius:       14px;
-  --radius-sm:    10px;
-  --edge:         56px;   /* overscan safe margin */
-  --topbar-h:     84px;
+  --bg:           #0f1419;   /* cool slate near-black */
+  --surface:      #182028;   /* slate surface */
+  --surface-2:    #212b35;   /* raised surface */
+  --surface-3:    #2c3844;   /* highest surface */
+  --border:       #313e4a;   /* cool border */
+  --accent:       #2dd4bf;   /* teal primary */
+  --accent-glow:  rgba(45, 212, 191, 0.30);
+  --accent-2:     #f59e42;   /* warm secondary (amber) */
+  --accent-3:     #a78bfa;   /* violet tertiary */
+  --text:         #eaf0f2;   /* cool off-white */
+  --text-muted:   #8b9aa8;   /* cool muted */
+  --text-dim:     #556373;   /* cool dim */
+  --radius:       6px;
+  --radius-sm:    6px;
+  --edge:         64px;   /* overscan safe margin */
+  --topbar-h:     120px;
   --bottombar-h:  60px;
-  --tile-size:    220px;
-  --tile-gap:     32px;
+  --tile-w:       380px;  /* landscape tiles, streaming-app style */
+  --tile-h:       240px;
+  --tile-gap:     40px;
   --transition:   150ms ease;
 }
 

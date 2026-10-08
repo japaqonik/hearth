@@ -86,7 +86,7 @@ impl Default for Config {
         Config {
             appearance: AppearanceConfig {
                 theme: "dark".into(),
-                accent_color: "#e50914".into(),
+                accent_color: "#2dd4bf".into(),
                 ui_scale: 1.0,
                 background_path: "".into(),
             },

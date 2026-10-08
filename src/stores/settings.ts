@@ -48,7 +48,7 @@ export interface Config {
 export const DEFAULT_CONFIG: Config = {
   appearance: {
     theme: "dark",
-    accent_color: "#e50914",
+    accent_color: "#2dd4bf",
     ui_scale: 1.0,
     background_path: "",
   },
