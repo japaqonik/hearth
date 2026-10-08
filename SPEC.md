@@ -647,11 +647,10 @@ source ~/.cargo/env
 
 # Install Node.js (via nvm or apt)
 # Install Tauri CLI
-cargo install tauri-cli
+cargo install tauri-cli --version "^2"
 
-# Project init
-npm create tauri-app@latest pi-launcher -- --template svelte-ts
-cd pi-launcher
+# Project is already set up; just install JS deps
+cd hearth
 npm install
 ```
 
@@ -665,21 +664,30 @@ cargo tauri dev
 
 ```bash
 cargo tauri build
-# Output: src-tauri/target/release/bundle/deb/pi-launcher_*.deb
+# Output: src-tauri/target/release/bundle/deb/hearth_<version>_arm64.deb
 ```
+
+Build natively on the target architecture. For the Raspberry Pi, build on the
+Pi itself — cross-compiling Tauri's native deps (WebKitGTK/GTK) from x86 is
+possible but painful; a native build on the device is simpler and reliable.
 
 ### Autostart on Boot
 
-If `autostart` is enabled in settings, create/remove a `.desktop` file:
+Managed by the Settings → System toggle, which writes/removes an XDG autostart
+entry at `~/.config/autostart/hearth.desktop` with `Exec=` set to the running
+executable path (see §4.3).
 
-```ini
-# ~/.config/autostart/pi-launcher.desktop
-[Desktop Entry]
-Type=Application
-Name=Pi Launcher
-Exec=/usr/bin/pi-launcher
-X-GNOME-Autostart-enabled=true
-```
+### Platform notes / known issues
+
+- **WebKitGTK DMABUF renderer on Raspberry Pi** — the Pi's VideoCore GPU, with
+  WebKitGTK's DMABUF rendering path, produces severe rendering corruption
+  (horizontal-stripe artifacts). The app sets `WEBKIT_DISABLE_DMABUF_RENDERER=1`
+  at startup in `main.rs` (Linux only, and only if unset) to force a stable
+  path. This is a real fix baked into the binary, not a manual workaround.
+  Override by exporting the variable explicitly if ever needed.
+- **Raspberry Pi Connect screen sharing** may show its own compositing
+  artifacts independent of the above; verifying on the physical HDMI output is
+  the reliable test.
 
 ---
 

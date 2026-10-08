@@ -42,12 +42,48 @@ npm install
 cargo tauri dev
 ```
 
-### Build for production
+### Build a .deb package
 
 ```bash
+npm install
 cargo tauri build
-# Output: src-tauri/target/release/bundle/deb/hearth_*.deb
 ```
+
+The installer is written to:
+
+```
+src-tauri/target/release/bundle/deb/hearth_<version>_<arch>.deb
+```
+
+Install it with apt (resolves runtime dependencies automatically):
+
+```bash
+sudo apt install ./src-tauri/target/release/bundle/deb/hearth_*.deb
+# installs the binary to /usr/bin/hearth
+```
+
+### Deploying to a Raspberry Pi
+
+Build **on the Pi** (native arm64) rather than cross-compiling — Tauri's native
+GTK/WebKit dependencies make cross-compilation painful, and a native build on
+the device is simpler:
+
+```bash
+# on the Pi
+git clone <repo-url> ~/hearth && cd ~/hearth
+# install prerequisites (see above), then:
+npm install
+cargo tauri build
+sudo apt install ./src-tauri/target/release/bundle/deb/hearth_*.deb
+hearth
+```
+
+### Platform note — Raspberry Pi rendering
+
+On the Pi's GPU, WebKitGTK's DMABUF renderer causes rendering corruption
+(horizontal-stripe artifacts). The app automatically sets
+`WEBKIT_DISABLE_DMABUF_RENDERER=1` at startup on Linux to force a stable
+rendering path, so no manual configuration is needed.
 
 ## Project Structure
 
