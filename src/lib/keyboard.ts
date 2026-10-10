@@ -96,3 +96,41 @@ export function keyLabel(key: string): string {
   };
   return map[key] ?? (key.length === 1 ? key.toUpperCase() : key);
 }
+
+/**
+ * Actions that must always remain reachable, or the UI (and the rebind flow
+ * itself) becomes unusable. These guard against soft-locking the app.
+ */
+export const ESSENTIAL_ACTIONS: Action[] = [
+  "up",
+  "down",
+  "left",
+  "right",
+  "confirm",
+  "back",
+];
+
+/**
+ * Given a (candidate) keymap, return the set of essential actions that would
+ * be UNREACHABLE — meaning no key press resolves to them. This accounts for
+ * both empty bindings and *shadowing* (an earlier-ordered action stealing a
+ * key via `resolveAction`'s first-match behavior).
+ *
+ * An action is reachable if at least one of its bound keys resolves back to
+ * that same action through `resolveAction`.
+ */
+export function unreachableEssentialActions(keymap: Keymap): Action[] {
+  const unreachable: Action[] = [];
+
+  for (const action of ESSENTIAL_ACTIONS) {
+    const keys = keymap[action] ?? [];
+    const reachable = keys.some((k) => {
+      // Simulate a key event for this key and see what it resolves to.
+      const fakeEvent = { key: k } as KeyboardEvent;
+      return resolveAction(fakeEvent, keymap) === action;
+    });
+    if (!reachable) unreachable.push(action);
+  }
+
+  return unreachable;
+}

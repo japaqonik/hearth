@@ -8,6 +8,7 @@
   const options = [
     { id: "minimize", label: "Minimize",      icon: "minimize",  available: true },
     { id: "close",    label: "Close Hearth",  icon: "x-circle",  available: true },
+    { id: "restart",  label: "Restart",       icon: "restart",   available: true },
     { id: "shutdown", label: "Shutdown",      icon: "power",     available: true },
   ] as const;
 
@@ -26,6 +27,13 @@
       }
     } else if (id === "close") {
       await invoke("close_app");
+    } else if (id === "restart") {
+      try {
+        await invoke("restart");
+        navigation.closePowerMenu();
+      } catch (e) {
+        error = `Restart failed: ${e}`;
+      }
     } else if (id === "shutdown") {
       try {
         await invoke("shutdown");
@@ -95,6 +103,13 @@
               <circle cx="12" cy="12" r="10"/>
               <line x1="15" y1="9" x2="9" y2="15"/>
               <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          {:else if option.id === "restart"}
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 4v6h-6"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
             </svg>
           {:else}
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"

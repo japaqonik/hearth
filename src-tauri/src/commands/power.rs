@@ -38,3 +38,22 @@ pub fn shutdown() -> Result<(), String> {
         ))
     }
 }
+
+/// Reboot the system via `systemctl reboot`. Same privilege considerations as
+/// `shutdown`.
+#[tauri::command]
+pub fn restart() -> Result<(), String> {
+    let status = Command::new("systemctl")
+        .arg("reboot")
+        .status()
+        .map_err(|e| format!("Failed to run systemctl: {}", e))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "systemctl reboot exited with status {}",
+            status.code().unwrap_or(-1)
+        ))
+    }
+}

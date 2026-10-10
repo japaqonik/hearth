@@ -8,7 +8,7 @@ use commands::{
         path_exists, rename_entry, trash_entry,
     },
     launcher::launch_app,
-    power::{close_app, minimize_window, shutdown},
+    power::{close_app, minimize_window, restart, shutdown},
     settings::{load_settings, save_settings},
 };
 
@@ -21,6 +21,7 @@ pub fn run() {
             close_app,
             minimize_window,
             shutdown,
+            restart,
             load_settings,
             save_settings,
             list_directory,

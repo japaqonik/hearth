@@ -10,7 +10,7 @@ Built with [Tauri 2](https://tauri.app) (Rust backend) + [Svelte 5](https://svel
 - Embedded file manager for browsing and playing media
 - Launches browser, media player, and any configured application
 - Fully configurable keybindings (remap any navigation key, in-app or via config)
-- Power menu: minimize, close, or shut down the system
+- Power menu: minimize, close, restart, or shut down the system
 - Dark TV-optimized UI with configurable accent color and background image
 - Bundled Manrope font, default wallpaper, and a flame logo — no network dependencies at runtime
 - Config stored in `~/.config/hearth/config.toml`

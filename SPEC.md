@@ -275,15 +275,17 @@ is not prominently exposed.
 
 ### 4.4 Power Menu
 
-Modal overlay triggered by the power button in the Topbar. Three options:
+Modal overlay triggered by the power button in the Topbar. Four options:
 
 - **Minimize** — minimizes the window (`minimize_window` command) so the user can
   reach the desktop/system without quitting Hearth. On Wayland the exact behavior
   depends on the compositor (Labwc minimizes to the panel).
 - **Close Hearth** — exits the app cleanly (`close_app`).
+- **Restart** — reboots the system via `systemctl reboot` (`restart` command).
 - **Shutdown** — powers the system off via `systemctl poweroff` (`shutdown` command).
-  Relies on logind/polkit allowing a local session to power off without a
-  password (the norm on Ubuntu and Raspberry Pi OS). Errors surface in the menu.
+  Restart/Shutdown rely on logind/polkit allowing a local session to reboot/power
+  off without a password (the norm on Ubuntu and Raspberry Pi OS). Errors surface
+  in the menu.
 
 ---
 
@@ -388,13 +390,17 @@ fn minimize_window(app: AppHandle) -> Result<(), String>
 // Power off the system
 #[tauri::command]
 fn shutdown() -> Result<(), String>
+
+// Reboot the system
+#[tauri::command]
+fn restart() -> Result<(), String>
 ```
 
 Notes:
-- `shutdown` runs `systemctl poweroff`. On a local session with logind/polkit
-  this succeeds without a password on both Ubuntu and Raspberry Pi OS. If a
-  setup denies it, the error is surfaced in the Power Menu; a polkit rule or
-  sudoers entry would then be needed.
+- `shutdown` runs `systemctl poweroff`, `restart` runs `systemctl reboot`. On a
+  local session with logind/polkit these succeed without a password on both
+  Ubuntu and Raspberry Pi OS. If a setup denies it, the error is surfaced in the
+  Power Menu; a polkit rule or sudoers entry would then be needed.
 - `minimize_window` resolves the `"main"` window via `get_webview_window` and
   calls `minimize()`. Behavior on Wayland depends on the compositor.
 - Suspend/sleep remains a separate future project; not implemented here.
@@ -533,6 +539,18 @@ remappable.
 
 Bindings are editable in Settings → Controls (press-to-rebind) or directly in
 `config.toml`.
+
+**Soft-lock prevention.** A key maps to exactly one action: binding a key to an
+action **removes it from whatever action previously held it** (a move, not a
+duplicate), so there is never ambiguity about which action a key triggers.
+On top of that, essential actions (`up`, `down`, `left`, `right`, `confirm`,
+`back`) must always keep at least one key. Before committing a rebind, the
+Controls UI builds the candidate keymap and runs `unreachableEssentialActions`;
+if the move would strip the last key from an essential action, the rebind is
+rejected with a message naming the affected action(s). So e.g. moving Enter to
+`right` is only allowed if `confirm` still has another key (give it one first).
+(An already-broken config from before this safeguard is recovered by editing or
+deleting `~/.config/hearth/config.toml`.)
 
 ### Focus Grid Logic
 

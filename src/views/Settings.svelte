@@ -4,8 +4,8 @@
   import { settings, effectiveKeymap } from "../stores/settings";
   import { launchApp, detectTerminal, autostartStatus, setAutostart } from "../lib/tauri";
   import type { Config, AppTile } from "../stores/settings";
-  import { ACTION_LABELS, DEFAULT_KEYMAP, resolveAction, keyLabel } from "../lib/keyboard";
-  import type { Action } from "../lib/keyboard";
+  import { ACTION_LABELS, DEFAULT_KEYMAP, resolveAction, keyLabel, unreachableEssentialActions } from "../lib/keyboard";
+  import type { Action, Keymap } from "../lib/keyboard";
   import FilePicker from "../components/FilePicker.svelte";
   import RenameDialog from "../components/RenameDialog.svelte";
   import ConfirmDialog from "../components/ConfirmDialog.svelte";
@@ -179,13 +179,38 @@
     const action = rebindAction;
     if (!action) return;
 
-    // Store the single key as-is; the resolver matches letters case-insensitively
     const key = e.key;
+    const keyNorm = key.length === 1 ? key.toLowerCase() : key;
+    const sameKey = (k: string) => (k.length === 1 ? k.toLowerCase() : k) === keyNorm;
 
+    // Build the candidate keymap with "move" semantics: a key belongs to exactly
+    // one action. Assigning it to `action` removes it from whatever else held it.
+    const current = $effectiveKeymap;
+    const candidate: Keymap = {} as Keymap;
+    for (const a of Object.keys(current) as Action[]) {
+      candidate[a] = current[a].filter((k) => !sameKey(k));
+    }
+    candidate[action] = [key];
+
+    // Reject if this would strip the last key from any essential action — the
+    // user must give that action another key first (prevents soft-lock).
+    const broken = unreachableEssentialActions(candidate);
+    if (broken.length > 0) {
+      const labels = broken
+        .map((a) => ACTION_LABELS.find((x) => x.action === a)?.label ?? a)
+        .join(", ");
+      rebinding = false;
+      rebindAction = null;
+      flash(`Can't bind — would leave no key for: ${labels}. Rebind that first.`);
+      return;
+    }
+
+    // Persist the full candidate keymap (so the key is removed from its old owner)
     await update((c) => {
-      if (!c.controls) c.controls = { keymap: {} };
-      if (!c.controls.keymap) c.controls.keymap = {};
-      c.controls.keymap[action] = [key];
+      c.controls = { keymap: {} };
+      for (const a of Object.keys(candidate) as Action[]) {
+        c.controls.keymap[a] = candidate[a];
+      }
     });
 
     rebinding = false;
