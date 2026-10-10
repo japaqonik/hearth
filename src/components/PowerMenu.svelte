@@ -2,8 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { navigation } from "../stores/navigation";
-  import { effectiveKeymap } from "../stores/settings";
-  import { resolveAction } from "../lib/keyboard";
+  import { registerInput } from "../lib/input";
+  import type { Action } from "../lib/keyboard";
 
   const options = [
     { id: "minimize", label: "Minimize",      icon: "minimize",  available: true },
@@ -45,8 +45,7 @@
     }
   }
 
-  function handleKey(e: KeyboardEvent) {
-    const action = resolveAction(e, $effectiveKeymap);
+  function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
     if (!action) return;
 
     switch (action) {
@@ -71,8 +70,9 @@
     }
   }
 
-  onMount(() => window.addEventListener("keydown", handleKey));
-  onDestroy(() => window.removeEventListener("keydown", handleKey));
+  let teardown: () => void;
+  onMount(() => { teardown = registerInput(handleAction); });
+  onDestroy(() => teardown?.());
 </script>
 
 <!-- Backdrop -->

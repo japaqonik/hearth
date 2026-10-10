@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { get } from "svelte/store";
   import { effectiveKeymap } from "../stores/settings";
-  import { resolveAction } from "../lib/keyboard";
+  import { resolveActionFromEvent } from "../lib/keyboard";
 
   interface Props {
     title: string;
@@ -25,9 +25,11 @@
   // 0 = Cancel (default focus), 1 = Confirm — deliberately defaults to the safe option
   let focusedIndex = $state(0);
 
-  function handleKey(e: KeyboardEvent) {
+  function handleInput(e: KeyboardEvent | MouseEvent) {
+    const action = resolveActionFromEvent(e, get(effectiveKeymap));
+    // For mouse: ignore unbound buttons so stray clicks don't get swallowed
+    if (e instanceof MouseEvent && action === null) return;
     e.stopPropagation();
-    const action = resolveAction(e, get(effectiveKeymap));
     switch (action) {
       case "left":
       case "right":
@@ -46,8 +48,14 @@
     }
   }
 
-  onMount(() => window.addEventListener("keydown", handleKey, true));
-  onDestroy(() => window.removeEventListener("keydown", handleKey, true));
+  onMount(() => {
+    window.addEventListener("keydown", handleInput, true);
+    window.addEventListener("mousedown", handleInput, true);
+  });
+  onDestroy(() => {
+    window.removeEventListener("keydown", handleInput, true);
+    window.removeEventListener("mousedown", handleInput, true);
+  });
 </script>
 
 <div class="backdrop" role="presentation" onclick={oncancel}>

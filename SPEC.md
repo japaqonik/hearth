@@ -517,28 +517,37 @@ terminal = "xterm"           # terminal emulator; auto-detected if default/missi
 ## 8. Keyboard Navigation Model
 
 Each view owns a `keydown` listener, but none of them check raw key names
-directly. Instead they resolve keys to **logical actions** via a shared layer
-(`src/lib/keyboard.ts`), so the physical keys are fully configurable.
+directly. Instead they resolve inputs to **logical actions** via a shared layer
+(`src/lib/keyboard.ts`), so the physical inputs are fully configurable.
+Inputs may be **keyboard keys or mouse buttons** (e.g. an air-mouse's center
+"OK" button, which emits a left click rather than Enter).
 
 ### Logical action layer
 
 - `Action` — the vocabulary views reason about: `up`, `down`, `left`, `right`,
   `confirm`, `back`, `options`, `pageUp`, `pageDown`, `home`, `end`, `delete`,
   `editCommand`.
-- `Keymap` — maps each action to one or more physical key names (`KeyboardEvent.key`).
-- `DEFAULT_KEYMAP` — the built-in bindings.
-- `resolveAction(event, keymap)` — resolves a key press to an action. Single
+- `Keymap` — maps each action to one or more **input tokens**. A token is either
+  a key name (`KeyboardEvent.key`) or a mouse-button token `Mouse<N>` where N is
+  the `MouseEvent.button` index (`Mouse0` = left, `Mouse1` = middle, `Mouse2` = right).
+- `DEFAULT_KEYMAP` — the built-in bindings (keyboard only by default).
+- `resolveToken(token, keymap)` / `resolveActionFromEvent(event, keymap)` —
+  resolve an input (or a raw `KeyboardEvent`/`MouseEvent`) to an action. Single
   letters match case-insensitively; `Backspace` falls back to `back` if unbound.
 - `effectiveKeymap` (derived store) — merges the user's configured overrides
   (`config.controls.keymap`) over the defaults; every view subscribes to it.
+- `registerInput(handler)` (`src/lib/input.ts`) — the single entry point views
+  use. It wires both `keydown` and `mousedown`, resolves each to an action, and
+  calls the handler with `(action, event)`. Unbound mouse buttons are ignored so
+  stray clicks are not swallowed.
 
 Text-entry contexts (the rename dialog) intentionally use raw keys, not the
 keymap, so typing works normally. File-operation letter shortcuts in the
 options bar (C/X/V/R/H) are mnemonic and remain fixed; only navigation is
 remappable.
 
-Bindings are editable in Settings → Controls (press-to-rebind) or directly in
-`config.toml`.
+Bindings are editable in Settings → Controls (press-to-rebind — press any key
+**or mouse button**) or directly in `config.toml`.
 
 **Soft-lock prevention.** A key maps to exactly one action: binding a key to an
 action **removes it from whatever action previously held it** (a move, not a

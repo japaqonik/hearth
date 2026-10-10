@@ -4,8 +4,9 @@
   import { settings, effectiveKeymap } from "../stores/settings";
   import { launchApp, detectTerminal, autostartStatus, setAutostart } from "../lib/tauri";
   import type { Config, AppTile } from "../stores/settings";
-  import { ACTION_LABELS, DEFAULT_KEYMAP, resolveAction, keyLabel, unreachableEssentialActions } from "../lib/keyboard";
+  import { ACTION_LABELS, DEFAULT_KEYMAP, keyLabel, unreachableEssentialActions, tokenFromKeyboardEvent, tokenFromMouseEvent } from "../lib/keyboard";
   import type { Action, Keymap } from "../lib/keyboard";
+  import { registerInput } from "../lib/input";
   import FilePicker from "../components/FilePicker.svelte";
   import RenameDialog from "../components/RenameDialog.svelte";
   import ConfirmDialog from "../components/ConfirmDialog.svelte";
@@ -164,36 +165,25 @@
     rebinding = true;
   }
 
-  async function captureRebind(e: KeyboardEvent) {
-    // Called while rebinding — the next key press becomes the new binding
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Escape cancels the rebind without changing anything
-    if (e.key === "Escape") {
-      rebinding = false;
-      rebindAction = null;
-      return;
-    }
-
+  // Core rebind logic — works on a canonical input token (key name or MouseN).
+  async function commitRebind(token: string) {
     const action = rebindAction;
     if (!action) return;
 
-    const key = e.key;
-    const keyNorm = key.length === 1 ? key.toLowerCase() : key;
-    const sameKey = (k: string) => (k.length === 1 ? k.toLowerCase() : k) === keyNorm;
+    const norm = (t: string) => (t.length === 1 ? t.toLowerCase() : t);
+    const target = norm(token);
+    const sameToken = (t: string) => norm(t) === target;
 
-    // Build the candidate keymap with "move" semantics: a key belongs to exactly
-    // one action. Assigning it to `action` removes it from whatever else held it.
+    // "Move" semantics: a token belongs to exactly one action. Assigning it to
+    // `action` removes it from whatever else held it.
     const current = $effectiveKeymap;
     const candidate: Keymap = {} as Keymap;
     for (const a of Object.keys(current) as Action[]) {
-      candidate[a] = current[a].filter((k) => !sameKey(k));
+      candidate[a] = current[a].filter((t) => !sameToken(t));
     }
-    candidate[action] = [key];
+    candidate[action] = [token];
 
-    // Reject if this would strip the last key from any essential action — the
-    // user must give that action another key first (prevents soft-lock).
+    // Reject if this would strip the last binding from any essential action.
     const broken = unreachableEssentialActions(candidate);
     if (broken.length > 0) {
       const labels = broken
@@ -205,7 +195,6 @@
       return;
     }
 
-    // Persist the full candidate keymap (so the key is removed from its old owner)
     await update((c) => {
       c.controls = { keymap: {} };
       for (const a of Object.keys(candidate) as Action[]) {
@@ -215,7 +204,31 @@
 
     rebinding = false;
     rebindAction = null;
-    flash(`Bound "${action}" to ${keyLabel(key)}`);
+    flash(`Bound "${action}" to ${keyLabel(token)}`);
+  }
+
+  function captureRebind(e: KeyboardEvent) {
+    if (!rebinding) return;
+    // Called while rebinding — the next key press becomes the new binding
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Escape always cancels the rebind without changing anything
+    if (e.key === "Escape") {
+      rebinding = false;
+      rebindAction = null;
+      return;
+    }
+
+    commitRebind(tokenFromKeyboardEvent(e));
+  }
+
+  function captureRebindMouse(e: MouseEvent) {
+    if (!rebinding) return;
+    // The next mouse button press becomes the new binding
+    e.preventDefault();
+    e.stopPropagation();
+    commitRebind(tokenFromMouseEvent(e));
   }
 
   async function resetKeymap() {
@@ -275,7 +288,7 @@
     }
   }
 
-  function handleAppearanceKey(action: string, e: KeyboardEvent) {
+  function handleAppearanceKey(action: string, e: KeyboardEvent | MouseEvent) {
     if (appearanceRow === 0) {
       // Swatch row — horizontal
       switch (action) {
@@ -319,16 +332,11 @@
     }
   }
 
-  function handleKey(e: KeyboardEvent) {
-    // While rebinding, capture the next key press as the new binding
-    if (rebinding) {
-      captureRebind(e);
-      return;
-    }
+  function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
+    // While rebinding, the dedicated capture listeners handle input
+    if (rebinding) return;
 
     if (dialogOpen || powerMenuOpen || focusZone === "topbar") return;
-
-    const action = resolveAction(e, $effectiveKeymap);
 
     if (zone === "sections") {
       if (!action) return;
@@ -407,14 +415,22 @@
     }
   }
 
+  let teardown: () => void;
   onMount(async () => {
-    window.addEventListener("keydown", handleKey);
+    // Capture-phase listeners handle rebinding (they no-op unless rebinding and
+    // stopPropagation so nav doesn't also fire). Both key and mouse are accepted.
+    window.addEventListener("keydown", captureRebind, true);
+    window.addEventListener("mousedown", captureRebindMouse, true);
+    // Main navigation (keyboard + bound mouse buttons)
+    teardown = registerInput(handleAction);
     try {
       autostartEnabled = await autostartStatus();
     } catch {}
   });
   onDestroy(() => {
-    window.removeEventListener("keydown", handleKey);
+    window.removeEventListener("keydown", captureRebind, true);
+    window.removeEventListener("mousedown", captureRebindMouse, true);
+    teardown?.();
     clearTimeout(messageTimer);
   });
 </script>

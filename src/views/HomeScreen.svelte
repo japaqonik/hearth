@@ -2,8 +2,9 @@
   import { onMount, onDestroy } from "svelte";
   import AppGrid from "../components/AppGrid.svelte";
   import { navigation } from "../stores/navigation";
-  import { settings, effectiveKeymap } from "../stores/settings";
-  import { resolveAction } from "../lib/keyboard";
+  import { settings } from "../stores/settings";
+  import { registerInput } from "../lib/input";
+  import type { Action } from "../lib/keyboard";
   import { invoke } from "@tauri-apps/api/core";
 
   const COLS = 3;
@@ -12,7 +13,6 @@
   let tiles = $derived($settings.apps.tiles);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
-  let keymap = $derived($effectiveKeymap);
   let errorMsg = $state("");
   let errorTimer: ReturnType<typeof setTimeout>;
 
@@ -38,14 +38,13 @@
     }
   }
 
-  function handleKey(e: KeyboardEvent) {
-    // Only handle keys when focus is in the grid and no overlay is open
+  function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
+    // Only handle input when focus is in the grid and no overlay is open
     if (focusZone !== "grid" || powerMenuOpen) return;
 
     const count = tiles.length;
     if (count === 0) return;
 
-    const action = resolveAction(e, keymap);
     if (!action) return;
 
     switch (action) {
@@ -84,8 +83,9 @@
     }
   });
 
-  onMount(() => window.addEventListener("keydown", handleKey));
-  onDestroy(() => window.removeEventListener("keydown", handleKey));
+  let teardown: () => void;
+  onMount(() => { teardown = registerInput(handleAction); });
+  onDestroy(() => teardown?.());
 </script>
 
 <div class="homescreen fade-in">

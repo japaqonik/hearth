@@ -7,9 +7,10 @@
   import ConfirmDialog from "../components/ConfirmDialog.svelte";
   import { navigation } from "../stores/navigation";
   import { filemanager } from "../stores/filemanager";
-  import { settings, effectiveKeymap } from "../stores/settings";
+  import { settings } from "../stores/settings";
   import { openFile } from "../lib/tauri";
-  import { resolveAction } from "../lib/keyboard";
+  import { registerInput } from "../lib/input";
+  import type { Action } from "../lib/keyboard";
   import type { FileEntry } from "../lib/tauri";
 
   const PAGE = 10;
@@ -22,7 +23,6 @@
   let showHidden = $derived($settings.media.show_hidden);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
-  let keymap = $derived($effectiveKeymap);
 
   // Options mode (toggled with M) and dialog state
   let optionsMode = $state(false);
@@ -108,43 +108,45 @@
     else flash(`Moved "${selectedEntry.name}" to trash`);
   }
 
-  // ── Keyboard ────────────────────────────────────────────
-  function handleKey(e: KeyboardEvent) {
-    // Dialogs and overlays handle their own keys
+  // ── Input ───────────────────────────────────────────────
+  function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
+    // Dialogs and overlays handle their own input
     if (dialogOpen || powerMenuOpen || focusZone === "topbar") return;
 
     const count = entries.length;
-    const action = resolveAction(e, keymap);
+    const isKey = e instanceof KeyboardEvent;
 
-    // Options-mode-specific letter shortcuts (file operations, not navigation)
+    // Options-mode-specific letter shortcuts (file operations, keyboard only)
     if (optionsMode) {
-      switch (e.key.toLowerCase()) {
-        case "h":
-          e.preventDefault();
-          toggleHidden();
-          return;
-        case "c":
-          e.preventDefault();
-          if (selectedEntry) {
-            filemanager.copyToClipboard(selectedEntry);
-            flash(`Copied "${selectedEntry.name}"`);
-          }
-          return;
-        case "x":
-          e.preventDefault();
-          if (selectedEntry) {
-            filemanager.cutToClipboard(selectedEntry);
-            flash(`Cut "${selectedEntry.name}"`);
-          }
-          return;
-        case "v":
-          e.preventDefault();
-          doPaste();
-          return;
-        case "r":
-          e.preventDefault();
-          if (selectedEntry) renameOpen = true;
-          return;
+      if (isKey) {
+        switch ((e as KeyboardEvent).key.toLowerCase()) {
+          case "h":
+            e.preventDefault();
+            toggleHidden();
+            return;
+          case "c":
+            e.preventDefault();
+            if (selectedEntry) {
+              filemanager.copyToClipboard(selectedEntry);
+              flash(`Copied "${selectedEntry.name}"`);
+            }
+            return;
+          case "x":
+            e.preventDefault();
+            if (selectedEntry) {
+              filemanager.cutToClipboard(selectedEntry);
+              flash(`Cut "${selectedEntry.name}"`);
+            }
+            return;
+          case "v":
+            e.preventDefault();
+            doPaste();
+            return;
+          case "r":
+            e.preventDefault();
+            if (selectedEntry) renameOpen = true;
+            return;
+        }
       }
       if (action === "delete") {
         e.preventDefault();
@@ -211,13 +213,14 @@
     }
   }
 
+  let teardown: () => void;
   onMount(async () => {
-    window.addEventListener("keydown", handleKey);
+    teardown = registerInput(handleAction);
     await filemanager.init(showHidden, $settings.media.media_root);
   });
 
   onDestroy(() => {
-    window.removeEventListener("keydown", handleKey);
+    teardown?.();
     clearTimeout(messageTimer);
   });
 </script>

@@ -9,7 +9,7 @@ Built with [Tauri 2](https://tauri.app) (Rust backend) + [Svelte 5](https://svel
 - Fullscreen app launcher with keyboard navigation
 - Embedded file manager for browsing and playing media
 - Launches browser, media player, and any configured application
-- Fully configurable keybindings (remap any navigation key, in-app or via config)
+- Fully configurable keybindings — remap any navigation input to a key or mouse button (air-mouse friendly), in-app or via config
 - Power menu: minimize, close, restart, or shut down the system
 - Dark TV-optimized UI with configurable accent color and background image
 - Bundled Manrope font, default wallpaper, and a flame logo — no network dependencies at runtime

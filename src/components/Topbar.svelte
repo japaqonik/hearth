@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { navigation, TOPBAR_ITEMS } from "../stores/navigation";
-  import { effectiveKeymap } from "../stores/settings";
-  import { resolveAction } from "../lib/keyboard";
+  import { registerInput } from "../lib/input";
+  import type { Action } from "../lib/keyboard";
   import Logo from "./Logo.svelte";
 
   let time = $state("");
@@ -10,17 +10,14 @@
   let focusZone = $derived($navigation.focusZone);
   let focusedTopbarIndex = $derived($navigation.focusedTopbarIndex);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
-  let keymap = $derived($effectiveKeymap);
 
   function updateClock() {
     const now = new Date();
     time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
-  function handleKey(e: KeyboardEvent) {
+  function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
     if (focusZone !== "topbar" || powerMenuOpen) return;
-
-    const action = resolveAction(e, keymap);
     if (!action) return;
 
     switch (action) {
@@ -54,15 +51,16 @@
     }
   }
 
+  let teardown: () => void;
   onMount(() => {
     updateClock();
     timer = setInterval(updateClock, 1000);
-    window.addEventListener("keydown", handleKey);
+    teardown = registerInput(handleAction);
   });
 
   onDestroy(() => {
     clearInterval(timer);
-    window.removeEventListener("keydown", handleKey);
+    teardown?.();
   });
 </script>
 
