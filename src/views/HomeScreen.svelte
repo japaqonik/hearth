@@ -13,6 +13,7 @@
   let tiles = $derived($settings.apps.tiles);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
+  let launching = $derived($navigation.launching);
   let errorMsg = $state("");
   let errorTimer: ReturnType<typeof setTimeout>;
 
@@ -31,16 +32,19 @@
       navigation.goTo("settings");
       return;
     }
+    // External app launch — show the launch overlay (also blocks further input).
+    navigation.startLaunching(tile.name);
     try {
       await invoke("launch_app", { command: tile.command, args: tile.args });
     } catch (e) {
+      navigation.stopLaunching();
       showError(`Could not launch "${tile.name}": ${e}`);
     }
   }
 
   function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
     // Only handle input when focus is in the grid and no overlay is open
-    if (focusZone !== "grid" || powerMenuOpen) return;
+    if (focusZone !== "grid" || powerMenuOpen || launching) return;
 
     const count = tiles.length;
     if (count === 0) return;

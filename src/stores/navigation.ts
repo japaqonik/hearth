@@ -15,6 +15,8 @@ interface NavigationState {
   focusZone: FocusZone;
   focusedTopbarIndex: number;  // index into TOPBAR_ITEMS
   powerMenuOpen: boolean;
+  launching: boolean;          // an external app is being launched
+  launchingName: string;       // name shown in the launch overlay
 }
 
 function createNavigation() {
@@ -25,6 +27,8 @@ function createNavigation() {
     focusZone: "grid",
     focusedTopbarIndex: 0,
     powerMenuOpen: false,
+    launching: false,
+    launchingName: "",
   });
 
   return {
@@ -82,6 +86,14 @@ function createNavigation() {
       update((s) => ({ ...s, powerMenuOpen: false, focusZone: "topbar", focusedTopbarIndex: 1 }));
     },
 
+    startLaunching(name: string) {
+      update((s) => ({ ...s, launching: true, launchingName: name }));
+    },
+
+    stopLaunching() {
+      update((s) => ({ ...s, launching: false, launchingName: "" }));
+    },
+
     reset() {
       set({
         currentView: "home",
@@ -90,6 +102,8 @@ function createNavigation() {
         focusZone: "grid",
         focusedTopbarIndex: 0,
         powerMenuOpen: false,
+        launching: false,
+        launchingName: "",
       });
     },
   };

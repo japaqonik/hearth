@@ -23,6 +23,7 @@
   let showHidden = $derived($settings.media.show_hidden);
   let focusZone = $derived($navigation.focusZone);
   let powerMenuOpen = $derived($navigation.powerMenuOpen);
+  let launching = $derived($navigation.launching);
 
   // Options mode (toggled with M) and dialog state
   let optionsMode = $state(false);
@@ -72,9 +73,12 @@
     if (entry.is_dir) {
       await filemanager.enterDir(entry.path, showHidden);
     } else {
+      // Opening a file launches an external player — show the launch overlay.
+      navigation.startLaunching(entry.name);
       try {
         await openFile(entry.path, $settings);
       } catch (e) {
+        navigation.stopLaunching();
         flash(String(e));
       }
     }
@@ -111,7 +115,7 @@
   // ── Input ───────────────────────────────────────────────
   function handleAction(action: Action | null, e: KeyboardEvent | MouseEvent) {
     // Dialogs and overlays handle their own input
-    if (dialogOpen || powerMenuOpen || focusZone === "topbar") return;
+    if (dialogOpen || powerMenuOpen || focusZone === "topbar" || launching) return;
 
     const count = entries.length;
     const isKey = e instanceof KeyboardEvent;

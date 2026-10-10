@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { convertFileSrc } from "@tauri-apps/api/core";
   import Topbar from "./components/Topbar.svelte";
   import PowerMenu from "./components/PowerMenu.svelte";
+  import LaunchOverlay from "./components/LaunchOverlay.svelte";
   import HomeScreen from "./views/HomeScreen.svelte";
   import FileManager from "./views/FileManager.svelte";
   import Settings from "./views/Settings.svelte";
@@ -10,8 +11,37 @@
   import { settings } from "./stores/settings";
   import defaultBackground from "./assets/backgrounds/default.jpg";
 
+  // Safety-net timeout: if focus-loss never fires (compositor quirk), clear the
+  // launch overlay after this long so it can never get stuck.
+  const LAUNCH_TIMEOUT_MS = 8000;
+  let launchTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // When the launched app's window takes over, our WebView loses focus — the DOM
+  // `blur` event fires. We dismiss the overlay then. (No Tauri permission needed.)
+  function onBlur() {
+    if ($navigation.launching) clearLaunch();
+  }
+
+  function clearLaunch() {
+    clearTimeout(launchTimer);
+    navigation.stopLaunching();
+  }
+
   onMount(async () => {
     await settings.load();
+    window.addEventListener("blur", onBlur);
+  });
+
+  onDestroy(() => window.removeEventListener("blur", onBlur));
+
+  // When launching begins, arm the fallback timeout.
+  let launching = $derived($navigation.launching);
+  let launchingName = $derived($navigation.launchingName);
+  $effect(() => {
+    if (launching) {
+      clearTimeout(launchTimer);
+      launchTimer = setTimeout(() => navigation.stopLaunching(), LAUNCH_TIMEOUT_MS);
+    }
   });
 
   let currentView = $derived($navigation.currentView);
@@ -62,6 +92,10 @@
 
   {#if powerMenuOpen}
     <PowerMenu />
+  {/if}
+
+  {#if launching}
+    <LaunchOverlay appName={launchingName} />
   {/if}
 </div>
 
