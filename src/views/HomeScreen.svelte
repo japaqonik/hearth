@@ -58,15 +58,19 @@
         break;
       case "down":
         e.preventDefault();
-        focusedIndex = Math.min(focusedIndex + COLS, count - 1);
+        // Only move down if there is a tile directly below (next row exists).
+        // Prevents jumping to the last tile when all tiles are in one row.
+        if (focusedIndex + COLS < count) {
+          focusedIndex = focusedIndex + COLS;
+        }
         break;
       case "up":
         e.preventDefault();
-        // If we're in the top row, move focus to topbar
+        // If we're in the top row, move focus to topbar; otherwise up one row
         if (focusedIndex < COLS) {
           navigation.enterTopbar();
         } else {
-          focusedIndex = Math.max(focusedIndex - COLS, 0);
+          focusedIndex = focusedIndex - COLS;
         }
         break;
       case "confirm":
